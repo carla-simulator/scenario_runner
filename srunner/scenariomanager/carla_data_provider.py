@@ -10,13 +10,11 @@ This module provides all frequently used data from CARLA via
 local buffers to avoid blocking calls to CARLA
 """
 
-from __future__ import print_function
-
 import math
 import re
 import threading
+from typing import Any
 from numpy import random
-from six import iteritems
 
 import carla
 from agents.navigation.global_route_planner import GlobalRoutePlanner
@@ -57,7 +55,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _actor_transform_map = {}   # type: dict[carla.Actor, carla.Transform]
     _traffic_light_map = {}     # type: dict[carla.TrafficLight, carla.Transform]
     _carla_actor_pool = {}      # type: dict[int, carla.Actor]
-    _global_osc_parameters = {}  # type: dict[str, Any] # type: ignore : suppresses the missing Any import
+    _global_osc_parameters = {}  # type: dict[str, Any]
     _client = None              # type: carla.Client
     _world = None               # type: carla.World
     _map = None                 # type: carla.Map
@@ -1117,11 +1115,9 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_actors():
         """
-        Return list of actors and their ids
-
-        Note: iteritems from six is used to allow compatibility with Python 2 and 3
+        Return an iterator over the (id, actor) pairs of the actor pool
         """
-        return iteritems(CarlaDataProvider._carla_actor_pool)
+        return CarlaDataProvider._carla_actor_pool.items()
 
     @staticmethod
     def actor_id_exists(actor_id):

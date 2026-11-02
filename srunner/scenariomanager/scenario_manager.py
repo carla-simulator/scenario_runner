@@ -10,7 +10,6 @@ This module provides the ScenarioManager implementation.
 It must not be modified and is for reference only!
 """
 
-from __future__ import print_function
 import sys
 import time
 
@@ -176,7 +175,7 @@ class ScenarioManager(object):
 
             if self._debug_mode:
                 print("\n")
-                py_trees.display.print_ascii_tree(self.scenario_tree, show_status=True)
+                print(py_trees.display.ascii_tree(self.scenario_tree, show_status=True))
                 sys.stdout.flush()
 
             if self.scenario_tree.status != py_trees.common.Status.RUNNING:

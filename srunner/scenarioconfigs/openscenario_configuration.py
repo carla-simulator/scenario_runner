@@ -11,7 +11,6 @@ This module provides the key configuration parameters for a scenario based on Op
 
 import logging
 import os
-import time
 import xml.etree.ElementTree as ET
 
 import xmlschema
@@ -34,7 +33,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
 
     def __init__(self, filename, client, custom_params):
 
-        super(OpenScenarioConfiguration, self).__init__()
+        super().__init__()
 
         self.xml_tree = ET.parse(filename)
         self.filename = filename

@@ -7,8 +7,6 @@
 This module provides the base class for all autonomous agents
 """
 
-from __future__ import print_function
-
 import carla
 
 from srunner.autoagents.sensor_interface import SensorInterface

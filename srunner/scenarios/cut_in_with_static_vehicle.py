@@ -6,8 +6,6 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-from __future__ import print_function
-
 import py_trees
 import carla
 
@@ -199,7 +197,7 @@ class StaticCutIn(BasicScenario):
         After invoking this scenario, a parked vehicle will wait for the ego to
         be close-by, merging into its lane, forcing it to break.
         """
-        sequence = py_trees.composites.Sequence(name="StaticCutIn")
+        sequence = py_trees.composites.Sequence(name="StaticCutIn", memory=True)
         if self.route_mode:
             total_dist = self._blocker_distance
             total_dist += self._vehicle_gap * (self._back_vehicles + self._front_vehicles + 1)
@@ -211,7 +209,7 @@ class StaticCutIn(BasicScenario):
 
         # Wait until ego is close to the adversary
         trigger_adversary = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="TriggerAdversaryStart")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
             self.ego_vehicles[0], self._reaction_time, collision_location))
         trigger_adversary.add_child(InTriggerDistanceToLocation(
@@ -225,10 +223,10 @@ class StaticCutIn(BasicScenario):
             sequence.add_child(RemoveRoadLane(self._side_wp))
 
         cut_in_behavior = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="CutIn")
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="CutIn")
         cut_in_direction = 'right' if self._direction == 'left' else 'left'
 
-        cut_in_movement = py_trees.composites.Sequence()
+        cut_in_movement = py_trees.composites.Sequence(name="CutInMovement", memory=True)
         cut_in_movement.add_child(CutIn(
             self._adversary_actor, self.ego_vehicles[0], cut_in_direction, change_time=3, other_lane_time=2))
         cut_in_movement.add_child(BasicAgentBehavior(

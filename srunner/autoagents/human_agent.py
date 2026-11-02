@@ -7,8 +7,6 @@
 This module provides a human agent to control the ego vehicle via keyboard
 """
 
-from __future__ import print_function
-
 import json
 
 try:

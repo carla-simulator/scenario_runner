@@ -13,7 +13,6 @@ behavior of the sun.
 
 import datetime
 import math
-import operator
 
 import ephem
 import py_trees
@@ -21,6 +20,7 @@ import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
+from srunner.tools.blackboard import get_blackboard, set_blackboard
 
 
 class Weather(object):
@@ -112,7 +112,7 @@ class OSCWeatherBehavior(py_trees.behaviour.Behaviour):
         """
         Setup parameters
         """
-        super(OSCWeatherBehavior, self).__init__(name)
+        super().__init__(name)
         self._weather = None
         self._current_time = None
 
@@ -140,17 +140,13 @@ class OSCWeatherBehavior(py_trees.behaviour.Behaviour):
 
         weather = None
 
-        try:
-            check_weather = operator.attrgetter("CarlaWeather")
-            weather = check_weather(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        weather = get_blackboard("CarlaWeather", None)
 
         if weather:
             self._weather = weather
-            delattr(py_trees.blackboard.Blackboard(), "CarlaWeather")
+            py_trees.blackboard.Blackboard.unset("CarlaWeather")
             CarlaDataProvider.get_world().set_weather(self._weather.carla_weather)
-            py_trees.blackboard.Blackboard().set("Datetime", self._weather.datetime, overwrite=True)
+            set_blackboard("Datetime", self._weather.datetime)
 
         if self._weather and self._weather.animation:
             new_time = GameTime.get_time()
@@ -161,7 +157,7 @@ class OSCWeatherBehavior(py_trees.behaviour.Behaviour):
                 self._current_time = new_time
                 CarlaDataProvider.get_world().set_weather(self._weather.carla_weather)
 
-                py_trees.blackboard.Blackboard().set("Datetime", self._weather.datetime, overwrite=True)
+                set_blackboard("Datetime", self._weather.datetime)
 
         return py_trees.common.Status.RUNNING
 

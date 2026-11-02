@@ -7,8 +7,6 @@
 Module used to parse all the route and scenario configuration parameters.
 """
 
-from __future__ import print_function
-
 import py_trees
 
 from srunner.scenarios.basic_scenario import BasicScenario
@@ -65,7 +63,7 @@ class BackgroundActivityParametrizer(BasicScenario):
         while another actor runs a red lift, forcing the ego to break.
         """
 
-        sequence = py_trees.composites.Sequence()
+        sequence = py_trees.composites.Sequence(name="Sequence", memory=True)
         sequence.add_child(
             ChangeRoadBehavior(
                 self._num_front_vehicles, self._num_back_vehicles, self._road_spawn_dist

@@ -59,7 +59,7 @@ class HardBreakRoute(BasicScenario):
         then waits for a bit to check if the actor has collided. After a set duration,
         the front vehicles will resume their movement
         """
-        sequence = py_trees.composites.Sequence("HardBreak")
+        sequence = py_trees.composites.Sequence("HardBreak", memory=True)
         sequence.add_child(StopFrontVehicles())
         sequence.add_child(Idle(self._stop_duration))
         sequence.add_child(StartFrontVehicles())

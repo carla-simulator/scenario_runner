@@ -11,7 +11,7 @@ weather conditions, at a non-junction and encroaches into another
 vehicle traveling in the opposite direction.
 """
 
-from six.moves.queue import Queue   # pylint: disable=relative-import,bad-option-value
+from queue import Queue
 
 import math  # pylint: disable=wrong-import-order
 import py_trees
@@ -27,6 +27,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTes
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
+from srunner.tools.blackboard import set_blackboard
 
 
 class ManeuverOppositeDirection(BasicScenario):
@@ -55,7 +56,7 @@ class ManeuverOppositeDirection(BasicScenario):
         self._source_transform = None
         self._sink_location = None
         self._blackboard_queue_name = 'ManeuverOppositeDirection/actor_flow_queue'
-        self._queue = py_trees.blackboard.Blackboard().set(self._blackboard_queue_name, Queue())
+        self._queue = set_blackboard(self._blackboard_queue_name, Queue())
         self._obstacle_type = obstacle_type
         self._first_actor_transform = None
         self._second_actor_transform = None
@@ -63,7 +64,7 @@ class ManeuverOppositeDirection(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
 
-        super(ManeuverOppositeDirection, self).__init__(
+        super().__init__(
             "ManeuverOppositeDirection",
             ego_vehicles,
             config,
@@ -134,7 +135,7 @@ class ManeuverOppositeDirection(BasicScenario):
             blackboard_queue_name=self._blackboard_queue_name, avoid_collision=True)
 
         # Non-leaf nodes
-        parallel_root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        parallel_root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="ParallelRoot")
 
         # Building tree
         parallel_root.add_child(ego_drive_distance)
@@ -142,7 +143,7 @@ class ManeuverOppositeDirection(BasicScenario):
         parallel_root.add_child(actor_sink)
         parallel_root.add_child(waypoint_follower)
 
-        scenario_sequence = py_trees.composites.Sequence()
+        scenario_sequence = py_trees.composites.Sequence(name="ScenarioSequence", memory=True)
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[0], self._first_actor_transform))
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[1], self._second_actor_transform))
         scenario_sequence.add_child(ActorTransformSetter(self.other_actors[2], self._third_actor_transform))

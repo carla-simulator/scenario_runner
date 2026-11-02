@@ -23,6 +23,7 @@
 # ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import collections
 import datetime
 import math
 import weakref
@@ -46,7 +47,6 @@ def get_actor_display_name(actor, truncate=250):
 class HUD(object):
     def __init__(self, width, height):
         self.dim = (width, height)
-        font = pygame.font.Font(pygame.font.get_default_font(), 20)
         fonts = [x for x in pygame.font.get_fonts() if "mono" in x]
         default_font = "ubuntumono"
         mono = default_font if default_font in fonts else fonts[0]
@@ -266,7 +266,7 @@ class CameraManager(object):
         self._index = None
 
     def toggle_camera(self):
-        set_transform((self._transform_index + 1) % len(self._camera_transforms))
+        self.set_transform((self._transform_index + 1) % len(self._camera_transforms))
 
     def set_transform(self, idx):
         self._transform_index = idx

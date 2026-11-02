@@ -9,8 +9,6 @@
 Scenario in which the ego is parked between two vehicles and has to maneuver to start the route.
 """
 
-from __future__ import print_function
-
 import py_trees
 import carla
 
@@ -181,18 +179,18 @@ class ParkingExitRoute(BasicScenario):
         After ego drives away, activate OutsideRouteLanesTest, end scenario.
         """
 
-        sequence = py_trees.composites.Sequence(name="ParkingExit")
+        sequence = py_trees.composites.Sequence(name="ParkingExit", memory=True)
         sequence.add_child(ChangeRoadBehavior(spawn_dist=self._flow_distance))
-        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Root")
 
-        side_actor_behavior = py_trees.composites.Sequence()
+        side_actor_behavior = py_trees.composites.Sequence(name="SideActorBehavior", memory=True)
         side_actor_behavior.add_child(ChangeAutoPilot(self.other_actors[2], True))
         side_actor_behavior.add_child(DriveDistance(self.other_actors[2], self._side_end_distance))
         side_actor_behavior.add_child(ActorTransformSetter(self.other_actors[2], self._end_side_transform, False))
         side_actor_behavior.add_child(WaitForever())
         root.add_child(side_actor_behavior)
 
-        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="EndCondition")
         end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
         end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         root.add_child(end_condition)
@@ -234,7 +232,7 @@ class ParkingExit(ParkingExitRoute):
         self._end_actor_flow = convert_dict_to_location(config.other_parameters['end_actor_flow'])
         self._flow_speed = get_value_parameter(config, 'speed', float, 7)
 
-        super(ParkingExit, self).__init__(
+        super().__init__(
             world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _initialize_actors(self, config):
@@ -290,8 +288,8 @@ class ParkingExit(ParkingExitRoute):
         source_wp = self._map.get_waypoint(self._start_actor_flow)
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
-        sequence = py_trees.composites.Sequence(name="ParkingExit")
-        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        sequence = py_trees.composites.Sequence(name="ParkingExit", memory=True)
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Root")
 
         root.add_child(ActorFlow(
             source_wp, sink_wp, [self._flow_distance, self._flow_distance],

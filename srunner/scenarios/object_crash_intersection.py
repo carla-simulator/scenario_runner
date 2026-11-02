@@ -9,8 +9,6 @@ The scenario realizes the user controlled ego vehicle
 moving along the road and encounters a cyclist ahead after taking a right or left turn.
 """
 
-from __future__ import print_function
-
 import py_trees
 
 import carla
@@ -94,7 +92,7 @@ class BaseVehicleTurning(BasicScenario):
         self._offset = {"yaw": 270, "z": 0.2, "k": 1.5}
 
         self.timeout = timeout
-        super(BaseVehicleTurning, self).__init__(
+        super().__init__(
             name, ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
 
     def _get_target_waypoint(self):
@@ -166,14 +164,14 @@ class BaseVehicleTurning(BasicScenario):
         continue driving after the road is clear.If this does not happen
         within 90 seconds, a timeout stops the scenario.
         """
-        sequence = py_trees.composites.Sequence(name="CrossingActorIntersection")
+        sequence = py_trees.composites.Sequence(name="CrossingActorIntersection", memory=True)
         collision_location = self._collision_wp.transform.location
         collision_distance = collision_location.distance(self._adversary_transform.location)
         collision_duration = collision_distance / self._adversary_speed
 
         # Adversary trigger behavior
         trigger_adversary = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="TriggerAdversaryStart")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
             self.ego_vehicles[0], self._reaction_time, collision_location))
         trigger_adversary.add_child(InTriggerDistanceToLocation(
@@ -224,7 +222,7 @@ class VehicleTurningRight(BaseVehicleTurning):
         Setup all relevant parameters and create scenario
         """
         self._subtype = 'right'
-        super(VehicleTurningRight, self).__init__(
+        super().__init__(
             world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout, "VehicleTurningRight")
 
 
@@ -240,7 +238,7 @@ class VehicleTurningLeft(BaseVehicleTurning):
         Setup all relevant parameters and create scenario
         """
         self._subtype = 'left'
-        super(VehicleTurningLeft, self).__init__(
+        super().__init__(
             world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout, "VehicleTurningLeft")
 
 
@@ -256,7 +254,7 @@ class VehicleTurningRoute(BaseVehicleTurning):
         Setup all relevant parameters and create scenario
         """
         self._subtype = 'route'
-        super(VehicleTurningRoute, self).__init__(
+        super().__init__(
             world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout, "VehicleTurningRoute")
 
     def _create_test_criteria(self):
@@ -368,14 +366,14 @@ class VehicleTurningRoutePedestrian(BasicScenario):
     def _create_behavior(self):
         """
         """
-        sequence = py_trees.composites.Sequence(name="VehicleTurningRoutePedestrian")
+        sequence = py_trees.composites.Sequence(name="VehicleTurningRoutePedestrian", memory=True)
         sequence.add_child(ActorTransformSetter(self.other_actors[0], self._spawn_transform, True))
 
         collision_location = self._collision_wp.transform.location
 
         # Adversary trigger behavior
         trigger_adversary = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="TriggerAdversaryStart")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
             self.ego_vehicles[0], self._reaction_time, collision_location))
         trigger_adversary.add_child(InTriggerDistanceToLocation(
@@ -435,7 +433,7 @@ class VehicleTurningRoutePedestrian(BasicScenario):
             return trigger_tree
 
         parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="ScenarioTrigger")
 
         parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[0], 100))
 

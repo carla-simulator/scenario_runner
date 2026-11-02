@@ -9,8 +9,6 @@
 Wrapper for autonomous agents required for tracking and checking of used sensors
 """
 
-from __future__ import print_function
-
 import carla
 
 from srunner.autoagents.sensor_interface import CallBack

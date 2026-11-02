@@ -13,20 +13,16 @@ etc.
 The atomic behaviors are implemented with py_trees.
 """
 
-from __future__ import print_function
-
 import copy
 import math
 import operator
 import os
 import time
 import subprocess
-from bisect import bisect_right
 
 import numpy as np
 from numpy import random
 import py_trees
-from py_trees.blackboard import Blackboard
 import networkx
 
 import carla
@@ -45,6 +41,7 @@ from srunner.tools.scenario_helper import generate_target_waypoint_list_multilan
 
 
 import srunner.tools as sr_tools
+from srunner.tools.blackboard import get_blackboard, set_blackboard
 
 EPSILON = 0.001
 
@@ -110,7 +107,7 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
         self.name = name
         self._actor = actor
 
-    def setup(self, unused_timeout=15):
+    def setup(self, **kwargs):
         """
         Default setup
         """
@@ -123,14 +120,11 @@ class AtomicBehavior(py_trees.behaviour.Behaviour):
         Check whether WF for this actor is running and terminate all active WFs
         """
         if self._actor is not None:
-            try:
-                check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
-                terminate_wf = copy.copy(check_attr(py_trees.blackboard.Blackboard()))
-                py_trees.blackboard.Blackboard().set(
-                    "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
-            except AttributeError:
-                # It is ok to continue, if the Blackboard variable does not exist
-                pass
+            # It is ok to continue, if the Blackboard variable does not exist
+            running = get_blackboard("running_WF_actor_{}".format(self._actor.id))
+            if running is not None:
+                set_blackboard(
+                    "terminate_WF_actor_{}".format(self._actor.id), copy.copy(running))
         self.logger.debug("%s.initialise()" % (self.__class__.__name__))
 
     def terminate(self, new_status):
@@ -258,7 +252,7 @@ class ChangeWeather(AtomicBehavior):
         returns:
             py_trees.common.Status.SUCCESS
         """
-        py_trees.blackboard.Blackboard().set("CarlaWeather", self._weather, overwrite=True)
+        set_blackboard("CarlaWeather", self._weather)
         return py_trees.common.Status.SUCCESS
 
 
@@ -352,18 +346,14 @@ class ChangeActorControl(AtomicBehavior):
 
         actor_dict = {}
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if actor_dict:
             if self._actor.id in actor_dict:
                 actor_dict[self._actor.id].reset()
 
         actor_dict[self._actor.id] = self._actor_control
-        py_trees.blackboard.Blackboard().set("ActorsWithController", actor_dict, overwrite=True)
+        set_blackboard("ActorsWithController", actor_dict)
 
         return py_trees.common.Status.SUCCESS
 
@@ -396,11 +386,7 @@ class UpdateAllActorControls(AtomicBehavior):
 
         actor_dict = {}
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         for actor_id in actor_dict:
             actor_dict[actor_id].run_step()
@@ -490,11 +476,7 @@ class ChangeActorTargetSpeed(AtomicBehavior):
         """
         actor_dict = {}
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
@@ -530,11 +512,7 @@ class ChangeActorTargetSpeed(AtomicBehavior):
             py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
             py_trees.common.Status.FAILURE, else.
         """
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
@@ -622,11 +600,7 @@ class SyncArrivalOSC(AtomicBehavior):
         """
         actor_dict = {}
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
@@ -657,11 +631,7 @@ class SyncArrivalOSC(AtomicBehavior):
         positions at the same time.
         """
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
@@ -702,11 +672,7 @@ class SyncArrivalOSC(AtomicBehavior):
         is needed to avoid interfering with other running behaviors
         """
         if not self._final_speed_set:
-            try:
-                check_actors = operator.attrgetter("ActorsWithController")
-                actor_dict = check_actors(py_trees.blackboard.Blackboard())
-            except AttributeError:
-                pass
+            actor_dict = get_blackboard("ActorsWithController", {})
 
             if actor_dict and self._actor.id in actor_dict:
 
@@ -784,11 +750,7 @@ class ChangeActorWaypoints(AtomicBehavior):
         """
         actor_dict = {}
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
@@ -868,11 +830,7 @@ class ChangeActorWaypoints(AtomicBehavior):
             py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
             py_trees.common.Status.FAILURE, else.
         """
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
@@ -1021,11 +979,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
         """
         actor_dict = {}
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
@@ -1059,11 +1013,7 @@ class ChangeActorLateralMotion(AtomicBehavior):
             py_trees.common.Status.FAILURE, else.
         """
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
@@ -1167,11 +1117,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
         """
         actor_dict = {}
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
@@ -1192,11 +1138,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
             py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
             py_trees.common.Status.RUNNING, else.
         """
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
@@ -1264,11 +1206,7 @@ class ChangeActorLaneOffset(AtomicBehavior):
         """
 
         if not self._overwritten:
-            try:
-                check_actors = operator.attrgetter("ActorsWithController")
-                actor_dict = check_actors(py_trees.blackboard.Blackboard())
-            except AttributeError:
-                pass
+            actor_dict = get_blackboard("ActorsWithController", {})
 
             if actor_dict and self._actor.id in actor_dict:
                 actor_dict[self._actor.id].update_offset(0)
@@ -1348,11 +1286,7 @@ class ChangeLateralDistance(AtomicBehavior):
         """
         actor_dict = {}
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
@@ -1373,11 +1307,7 @@ class ChangeLateralDistance(AtomicBehavior):
             py_trees.common.Status.FAILURE, if the actor is not found in ActorsWithController Blackboard dictionary.
             py_trees.common.Status.RUNNING, else.
         """
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
@@ -1445,11 +1375,7 @@ class ChangeLateralDistance(AtomicBehavior):
         """
 
         if not self._overwritten:
-            try:
-                check_actors = operator.attrgetter("ActorsWithController")
-                actor_dict = check_actors(py_trees.blackboard.Blackboard())
-            except AttributeError:
-                pass
+            actor_dict = get_blackboard("ActorsWithController", {})
 
             if actor_dict and self._actor.id in actor_dict:
                 actor_dict[self._actor.id].update_offset(0)
@@ -2352,7 +2278,7 @@ class AddNoiseToRouteEgo(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        control = py_trees.blackboard.Blackboard().get("AV_control")
+        control = get_blackboard("AV_control")
         if not control:
             print("WARNING: Couldn't add noise to the ego because the control couldn't be found")
             return new_status
@@ -2734,7 +2660,7 @@ class WaypointFollower(AtomicBehavior):
         self._plan = plan
         self._blackboard_queue_name = blackboard_queue_name
         if blackboard_queue_name is not None:
-            self._queue = Blackboard().get(blackboard_queue_name)
+            self._queue = get_blackboard(blackboard_queue_name)
         self._args_lateral_dict = {'K_P': 1.0, 'K_D': 0.01, 'K_I': 0.0, 'dt': 0.05}
         self._avoid_collision = avoid_collision
         self._start_time = None
@@ -2750,19 +2676,18 @@ class WaypointFollower(AtomicBehavior):
         super().initialise()
         self._start_time = GameTime.get_time()
         self._unique_id = int(round(time.time() * 1e9))
-        try:
-            # check whether WF for this actor is already running and add new WF to running_WF list
-            check_attr = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
-            running = check_attr(py_trees.blackboard.Blackboard())
+        # check whether WF for this actor is already running and add new WF to running_WF list
+        running = get_blackboard("running_WF_actor_{}".format(self._actor.id))
+        if running is not None:
             active_wf = copy.copy(running)
             active_wf.append(self._unique_id)
-            py_trees.blackboard.Blackboard().set(
-                "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
-        except AttributeError:
+            set_blackboard(
+                "running_WF_actor_{}".format(self._actor.id), active_wf)
+        else:
             # no WF is active for this actor
-            py_trees.blackboard.Blackboard().set("terminate_WF_actor_{}".format(self._actor.id), [], overwrite=True)
-            py_trees.blackboard.Blackboard().set(
-                "running_WF_actor_{}".format(self._actor.id), [self._unique_id], overwrite=True)
+            set_blackboard("terminate_WF_actor_{}".format(self._actor.id), [])
+            set_blackboard(
+                "running_WF_actor_{}".format(self._actor.id), [self._unique_id])
 
         for actor in self._actor_dict:
             self._apply_local_planner(actor)
@@ -2813,11 +2738,8 @@ class WaypointFollower(AtomicBehavior):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        check_term = operator.attrgetter("terminate_WF_actor_{}".format(self._actor.id))
-        terminate_wf = check_term(py_trees.blackboard.Blackboard())
-
-        check_run = operator.attrgetter("running_WF_actor_{}".format(self._actor.id))
-        active_wf = check_run(py_trees.blackboard.Blackboard())
+        terminate_wf = get_blackboard("terminate_WF_actor_{}".format(self._actor.id), [])
+        active_wf = get_blackboard("running_WF_actor_{}".format(self._actor.id), [])
 
         # Termination of WF if the WFs unique_id is listed in terminate_wf
         # only one WF should be active, therefore all previous WF have to be terminated
@@ -2826,10 +2748,10 @@ class WaypointFollower(AtomicBehavior):
             if self._unique_id in active_wf:
                 active_wf.remove(self._unique_id)
 
-            py_trees.blackboard.Blackboard().set(
-                "terminate_WF_actor_{}".format(self._actor.id), terminate_wf, overwrite=True)
-            py_trees.blackboard.Blackboard().set(
-                "running_WF_actor_{}".format(self._actor.id), active_wf, overwrite=True)
+            set_blackboard(
+                "terminate_WF_actor_{}".format(self._actor.id), terminate_wf)
+            set_blackboard(
+                "running_WF_actor_{}".format(self._actor.id), active_wf)
             new_status = py_trees.common.Status.SUCCESS
             return new_status
 
@@ -3317,7 +3239,7 @@ class ActorSource(AtomicBehavior):
         self._actor_types = actor_type_list
         self._spawn_point = transform
         self._threshold = threshold
-        self._queue = Blackboard().get(blackboard_queue_name)
+        self._queue = get_blackboard(blackboard_queue_name)
         self._actor_limit = actor_limit
         self._last_blocking_actor = None
 
@@ -4530,11 +4452,7 @@ class KeepLongitudinalGap(AtomicBehavior):
     def initialise(self):
         actor_dict = {}
 
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             raise RuntimeError("Actor not found in ActorsWithController BlackBoard")
@@ -4550,11 +4468,7 @@ class KeepLongitudinalGap(AtomicBehavior):
         """
         keeps track of gap and update the controller accordingly
         """
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
 
         if not actor_dict or self._actor.id not in actor_dict:
             return py_trees.common.Status.FAILURE
@@ -4647,7 +4561,7 @@ class SwitchWrongDirectionTest(AtomicBehavior):
         super().__init__(name)
 
     def update(self):
-        py_trees.blackboard.Blackboard().set("AC_SwitchWrongDirectionTest", self._active, overwrite=True)
+        set_blackboard("AC_SwitchWrongDirectionTest", self._active)
         return py_trees.common.Status.SUCCESS
 
 
@@ -4674,7 +4588,7 @@ class SwitchMinSpeedCriteria(AtomicBehavior):
         keeps track of gap and update the controller accordingly
         """
         new_status = py_trees.common.Status.SUCCESS
-        py_trees.blackboard.Blackboard().set("SwitchMinSpeedCriteria", self._active, overwrite=True)
+        set_blackboard("SwitchMinSpeedCriteria", self._active)
         return new_status
 
 
@@ -4900,7 +4814,7 @@ class ScenarioTimeout(AtomicBehavior):
         Set start time
         """
         self._start_time = GameTime.get_time()
-        py_trees.blackboard.Blackboard().set("AC_SwitchActorBlockedTest", False, overwrite=True)
+        set_blackboard("AC_SwitchActorBlockedTest", False)
         super().initialise()
 
     def update(self):
@@ -4920,13 +4834,12 @@ class ScenarioTimeout(AtomicBehavior):
         Modifies the blackboard to tell the `ScenarioTimeoutTest` if the timeout was triggered
         """
         if not self._terminated:  # py_trees calls the terminate several times for some reason.
-            py_trees.blackboard.Blackboard().set(
+            set_blackboard(
                 f"ScenarioTimeout_{self._scenario_name}",
                 self._scenario_timeout,
-                overwrite=True,
             )
-            py_trees.blackboard.Blackboard().set(
-                "AC_SwitchActorBlockedTest", True, overwrite=True
+            set_blackboard(
+                "AC_SwitchActorBlockedTest", True
             )
             self._terminated = True
         super().terminate(new_status)

@@ -12,10 +12,7 @@ This module provides an example control for vehicles
 import math
 
 import carla
-from agents.navigation.basic_agent import LocalPlanner
-from agents.navigation.local_planner import RoadOption
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
 from srunner.scenariomanager.timer import GameTime
 
@@ -35,7 +32,7 @@ class VehicleVelocityControl(BasicControl):
 
     def __init__(self, actor, args=None):
 
-        super(VehicleVelocityControl, self).__init__(actor)
+        super().__init__(actor)
 
         # Remove the friction of the wheels so that the velocities aren't reduced by the ground
         physics_control = self._actor.get_physics_control()

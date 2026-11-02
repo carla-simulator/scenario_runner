@@ -8,8 +8,6 @@ The scenario realizes the user controlled ego vehicle
 moving along the road and encountering a construction setup.
 """
 
-from __future__ import print_function
-
 import py_trees
 import carla
 
@@ -213,12 +211,12 @@ class ConstructionObstacle(BasicScenario):
         source_wp = self._map.get_waypoint(self._start_actor_flow)
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
-        root = py_trees.composites.Sequence(name="ConstructionObstacle")
+        root = py_trees.composites.Sequence(name="ConstructionObstacle", memory=True)
 
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
 
-        behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Behavior")
 
         behavior.add_child(ActorFlow(
             source_wp, sink_wp, self._source_dist_interval,
@@ -260,12 +258,12 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
         source_wp = self._map.get_waypoint(self._start_actor_flow)
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
-        root = py_trees.composites.Sequence(name="ConstructionObstacle")
+        root = py_trees.composites.Sequence(name="ConstructionObstacle", memory=True)
 
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
 
-        behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Behavior")
 
         behavior.add_child(ActorFlow(
             source_wp, sink_wp, self._source_dist_interval,
@@ -282,16 +280,16 @@ class ConstructionObstacleTwoWays(ConstructionObstacle):
         if not reference_wp:
             raise ValueError("Couldnt find a left lane to spawn the opposite traffic")
 
-        root = py_trees.composites.Sequence(name="ConstructionObstacleTwoWays")
+        root = py_trees.composites.Sequence(name="ConstructionObstacleTwoWays", memory=True)
 
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
     
-        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="EndCondition")
         end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         end_condition.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._end_wp.transform, False))
 
-        behavior = py_trees.composites.Sequence()
+        behavior = py_trees.composites.Sequence(name="Behavior", memory=True)
         behavior.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self._construction_wp.transform.location, self._trigger_distance))
         behavior.add_child(Idle(self._opposite_wait_duration))
@@ -487,17 +485,17 @@ class ConstructionObstacleRoute(BasicScenario):
         Wait until the ego is close to the construction (and a bit more) before changing the side traffic
         Readd the traffic at the end
         """
-        root = py_trees.composites.Sequence(name="ConstructionObstacle")
+        root = py_trees.composites.Sequence(name="ConstructionObstacle", memory=True)
         root.add_child(RemoveRoadLane(self._reference_waypoint))
 
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
 
-        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="EndCondition")
         end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         end_condition.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._end_wp.transform, False))
 
-        behavior = py_trees.composites.Sequence()
+        behavior = py_trees.composites.Sequence(name="Behavior", memory=True)
         behavior.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self._construction_wp.transform.location, self._trigger_distance))
         behavior.add_child(Idle(self._opposite_wait_duration))
@@ -558,17 +556,17 @@ class ConstructionObstacleTwoWaysRoute(ConstructionObstacleRoute):
         if not reference_wp:
             raise ValueError("Couldnt find a left lane to spawn the opposite traffic")
 
-        root = py_trees.composites.Sequence(name="ConstructionObstacleTwoWays")
+        root = py_trees.composites.Sequence(name="ConstructionObstacleTwoWays", memory=True)
         root.add_child(RemoveRoadLane(self._reference_waypoint))
 
         for actor, transform in self._construction_transforms:
             root.add_child(ActorTransformSetter(actor, transform, True))
 
-        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        end_condition = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="EndCondition")
         end_condition.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         end_condition.add_child(WaitUntilInFrontPosition(self.ego_vehicles[0], self._end_wp.transform, False))
 
-        behavior = py_trees.composites.Sequence()
+        behavior = py_trees.composites.Sequence(name="Behavior", memory=True)
         behavior.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self._construction_wp.transform.location, self._trigger_distance))
         behavior.add_child(Idle(self._opposite_wait_duration))

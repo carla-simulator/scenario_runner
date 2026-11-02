@@ -10,8 +10,6 @@ Scenarios in which another (opposite) vehicle 'illegally' takes
 priority, e.g. by running a red traffic light.
 """
 
-from __future__ import print_function
-
 import py_trees
 import carla
 
@@ -84,7 +82,7 @@ class HighwayCutIn(BasicScenario):
         Hero vehicle is entering a junction in an urban area, at a signalized intersection,
         while another actor runs a red lift, forcing the ego to break.
         """
-        behavior = py_trees.composites.Sequence("HighwayCutIn")
+        behavior = py_trees.composites.Sequence("HighwayCutIn", memory=True)
 
         if self.route_mode:
             behavior.add_child(HandleJunctionScenario(

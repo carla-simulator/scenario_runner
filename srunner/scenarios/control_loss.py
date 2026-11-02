@@ -116,15 +116,15 @@ class ControlLoss(BasicScenario):
         """
         The scenario defined after is a "control loss vehicle" scenario.
         """
-        root = py_trees.composites.Parallel("ControlLoss", py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        sequence = py_trees.composites.Sequence()
+        root = py_trees.composites.Parallel("ControlLoss", py_trees.common.ParallelPolicy.SuccessOnOne())
+        sequence = py_trees.composites.Sequence(name="Sequence", memory=True)
 
         # First debris behavior
         sequence.add_child(InTriggerDistanceToLocation(
             self.ego_vehicles[0], self.first_transform.location, self._trigger_dist))
 
         noise_1 = self._get_noise_parameters()
-        noise_behavior_1 = py_trees.composites.Parallel("Add Noise 1", py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        noise_behavior_1 = py_trees.composites.Parallel("Add Noise 1", py_trees.common.ParallelPolicy.SuccessOnOne())
         if self.route_mode:
             noise_behavior_1.add_child(AddNoiseToRouteEgo(self.ego_vehicles[0], *noise_1))
         noise_behavior_1.add_child(InTriggerDistanceToLocation(
@@ -136,7 +136,7 @@ class ControlLoss(BasicScenario):
             self.ego_vehicles[0], self.second_transform.location, self._trigger_dist))
 
         noise_2 = self._get_noise_parameters()
-        noise_behavior_2 = py_trees.composites.Parallel("Add Noise 2", py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        noise_behavior_2 = py_trees.composites.Parallel("Add Noise 2", py_trees.common.ParallelPolicy.SuccessOnOne())
         if self.route_mode:
             noise_behavior_2.add_child(AddNoiseToRouteEgo(self.ego_vehicles[0], *noise_2))
         noise_behavior_2.add_child(InTriggerDistanceToLocation(
@@ -148,7 +148,7 @@ class ControlLoss(BasicScenario):
             self.ego_vehicles[0], self.third_transform.location, self._trigger_dist))
 
         noise_3 = self._get_noise_parameters()
-        noise_behavior_3 = py_trees.composites.Parallel("Add Noise 3", py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        noise_behavior_3 = py_trees.composites.Parallel("Add Noise 3", py_trees.common.ParallelPolicy.SuccessOnOne())
         if self.route_mode:
             noise_behavior_3.add_child(AddNoiseToRouteEgo(self.ego_vehicles[0], *noise_3))
         noise_behavior_3.add_child(InTriggerDistanceToLocation(

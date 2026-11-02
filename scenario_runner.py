@@ -13,9 +13,6 @@ It loads the scenario configuration, loads the scenario and manager,
 and finally triggers the scenario execution.
 """
 
-from __future__ import print_function
-
-import glob
 import traceback
 import argparse
 from argparse import RawTextHelpFormatter
@@ -25,7 +22,6 @@ try:
 except ImportError:
     from distutils.version import LooseVersion as Version  # Python 2 fallback
 import importlib
-import inspect
 import os
 import signal
 import sys
@@ -54,6 +50,7 @@ from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
+from srunner.tools.scenario_class_loader import ScenarioClassLoader
 # OpenSCENARIO 2.0 support requires antlr4-python3-runtime (the parser is
 # generated with ANTLR 4.9.3, the version that packages like omegaconf accept).
 # Import lazily so every other mode works without it; --openscenario2 reports
@@ -105,6 +102,9 @@ class ScenarioRunner(object):
         Setup ScenarioManager
         """
         self._args = args
+
+        # Registered once, so --scenario and --route resolve the same classes.
+        ScenarioClassLoader.set_additional_paths(args.additionalScenario)
 
         if args.timeout:
             self.client_timeout = float(args.timeout)
@@ -170,36 +170,11 @@ class ScenarioRunner(object):
         Get scenario class by scenario name
         If scenario is not supported or not found, exit script
         """
-
-        # Path of all scenario at "srunner/scenarios" folder + the path of the additional scenario argument
-        scenarios_list = glob.glob("{}/srunner/scenarios/*.py".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
-        scenarios_list.append(self._args.additionalScenario)
-
-        for scenario_file in scenarios_list:
-
-            # Get their module
-            module_name = os.path.basename(scenario_file).split('.')[0]
-            sys.path.insert(0, os.path.dirname(scenario_file))
-            try:
-                scenario_module = importlib.import_module(module_name)
-            except Exception as import_error:  # pylint: disable=broad-except
-                # Skip scenario modules with unavailable dependencies (e.g. the
-                # OpenSCENARIO 2.0 support and its antlr4 runtime requirement)
-                if self._args.debug:
-                    print("Skipping {}: {}".format(module_name, import_error))
-                sys.path.pop(0)
-                continue
-
-            # And their members of type class
-            for member in inspect.getmembers(scenario_module, inspect.isclass):
-                if scenario in member:
-                    return member[1]
-
-            # Remove unused Python paths
-            sys.path.pop(0)
-
-        print("Scenario '{}' not supported ... Exiting".format(scenario))
-        sys.exit(-1)
+        scenario_class = ScenarioClassLoader.get_scenario_class(scenario, self._args.debug)
+        if scenario_class is None:
+            print("Scenario '{}' not supported ... Exiting".format(scenario))
+            sys.exit(-1)
+        return scenario_class
 
     def _cleanup(self):
         """
@@ -644,8 +619,12 @@ def main():
     parser.add_argument('--json', action="store_true", help='Write results into a JSON file')
     parser.add_argument('--outputDir', default='', help='Directory for output files (default: this directory)')
 
-    parser.add_argument('--configFile', default='', help='Provide an additional scenario configuration file (*.xml)')
-    parser.add_argument('--additionalScenario', default='', help='Provide additional scenario implementations (*.py)')
+    parser.add_argument('--configFile', default=[], action='append',
+                        help='Provide additional scenario configurations: a *.xml file, a folder of them, '
+                             'or several separated by commas. Repeat the flag to add more.')
+    parser.add_argument('--additionalScenario', default=[], action='append',
+                        help='Provide additional scenario implementations: a *.py file, a folder of them, '
+                             'or several separated by commas. Repeat the flag to add more.')
 
     parser.add_argument('--debug', action="store_true", help='Run with debug output')
     parser.add_argument('--reloadWorld', action="store_true",

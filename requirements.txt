@@ -1,4 +1,4 @@
-py-trees==0.8.3
+py-trees==2.6.0
 numpy
 networkx
 Shapely
@@ -8,7 +8,6 @@ ephem
 tabulate
 opencv-python
 matplotlib
-six
 graphviz
 # Required for OpenSCENARIO 2.0 (--openscenario2) support; the OSC2 parser is
 # generated with ANTLR 4.9.3, matching the 4.9.* pin of common packages such

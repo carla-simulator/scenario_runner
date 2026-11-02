@@ -42,8 +42,6 @@ Use ARROWS or WASD keys for control.
     ESC          : quit
 """
 
-from __future__ import print_function
-
 # ==============================================================================
 # -- imports -------------------------------------------------------------------
 # ==============================================================================
@@ -708,7 +706,6 @@ class RadarSensor(object):
         self.sensor = None
         self._parent = parent_actor
         bound_x = 0.5 + self._parent.bounding_box.extent.x
-        bound_y = 0.5 + self._parent.bounding_box.extent.y
         bound_z = 0.5 + self._parent.bounding_box.extent.z
 
         self.velocity_range = 7.5 # m/s

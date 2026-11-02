@@ -27,7 +27,7 @@ class ExternalControl(BasicControl):
     """
 
     def __init__(self, actor, args=None):
-        super(ExternalControl, self).__init__(actor)
+        super().__init__(actor)
 
     def reset(self):
         """

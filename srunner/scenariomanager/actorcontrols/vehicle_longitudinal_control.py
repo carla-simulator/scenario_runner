@@ -28,7 +28,7 @@ class VehicleLongitudinalControl(BasicControl):
     """
 
     def __init__(self, actor, args=None):
-        super(VehicleLongitudinalControl, self).__init__(actor)
+        super().__init__(actor)
 
     def reset(self):
         """

@@ -9,8 +9,6 @@ Collection of traffic scenarios where the ego vehicle (hero)
 is making a right turn
 """
 
-from __future__ import print_function
-
 import py_trees
 
 import carla
@@ -179,7 +177,7 @@ class SignalizedJunctionRightTurn(JunctionRightTurn):
         while other actor coming straight from the left. The ego has to avoid colliding with it
         """
 
-        sequence = py_trees.composites.Sequence(name="JunctionRightTurn")
+        sequence = py_trees.composites.Sequence(name="JunctionRightTurn", memory=True)
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
@@ -190,8 +188,8 @@ class SignalizedJunctionRightTurn(JunctionRightTurn):
                 extend_road_exit=self._sink_dist + 20
             ))
 
-        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        end_condition = py_trees.composites.Sequence()
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Root")
+        end_condition = py_trees.composites.Sequence(name="EndCondition", memory=True)
         end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
         root.add_child(end_condition)
@@ -199,7 +197,7 @@ class SignalizedJunctionRightTurn(JunctionRightTurn):
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed, initial_actors=True))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
-        tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
+        tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior", memory=True)
         tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
         tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
         root.add_child(tl_freezer_sequence)
@@ -222,7 +220,7 @@ class NonSignalizedJunctionRightTurn(JunctionRightTurn):
         Hero vehicle is turning right in an urban area, at a signalized intersection,
         while other actor coming straight from the left. The ego has to avoid colliding with it
         """
-        sequence = py_trees.composites.Sequence(name="JunctionRightTurn")
+        sequence = py_trees.composites.Sequence(name="JunctionRightTurn", memory=True)
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
@@ -233,8 +231,8 @@ class NonSignalizedJunctionRightTurn(JunctionRightTurn):
                 extend_road_exit=self._sink_dist + 20
             ))
 
-        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        end_condition = py_trees.composites.Sequence()
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Root")
+        end_condition = py_trees.composites.Sequence(name="EndCondition", memory=True)
         end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
         root.add_child(end_condition)

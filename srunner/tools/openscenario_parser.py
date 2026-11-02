@@ -9,8 +9,6 @@
 This module provides a parser for scenario configuration files based on OpenSCENARIO
 """
 
-from __future__ import print_function
-
 from srunner.tools.util import strtobool
 import re
 import copy
@@ -42,21 +40,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (TrafficLig
                                                                       TrafficLightControllerSetter)
 # pylint: disable=unused-import
 # For the following includes the pylint check is disabled, as these are accessed via globals()
-from srunner.scenariomanager.scenarioatomics.atomic_criteria import (CollisionTest,
-                                                                     MaxVelocityTest,
-                                                                     DrivenDistanceTest,
-                                                                     AverageVelocityTest,
-                                                                     KeepLaneTest,
-                                                                     ReachedRegionTest,
-                                                                     OnSidewalkTest,
-                                                                     WrongLaneTest,
-                                                                     InRadiusRegionTest,
-                                                                     InRouteTest,
-                                                                     RouteCompletionTest,
-                                                                     RunningRedLightTest,
-                                                                     RunningStopTest,
-                                                                     OffRoadTest,
-                                                                     EndofRoadTest)
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, OffRoadTest, EndofRoadTest
 # pylint: enable=unused-import
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (InTriggerDistanceToVehicle,
                                                                                InTriggerDistanceToOSCPosition,
@@ -896,9 +880,10 @@ class OpenScenarioParser(object):
                 if entity_condition.find('EndOfRoadCondition') is not None:
                     end_road_condition = entity_condition.find('EndOfRoadCondition')
                     condition_duration = ParameterRef(end_road_condition.attrib.get('duration'))
-                    atomic_cls = py_trees.meta.inverter(EndofRoadTest)
-                    atomic = atomic_cls(trigger_actor, condition_duration, terminate_on_failure=True,
-                                        name=condition_name)
+                    atomic = py_trees.decorators.Inverter(
+                        name=condition_name,
+                        child=EndofRoadTest(trigger_actor, condition_duration, terminate_on_failure=True,
+                                            name=condition_name))
                 elif entity_condition.find('CollisionCondition') is not None:
                     collision_condition = entity_condition.find('CollisionCondition')
 
@@ -914,29 +899,33 @@ class OpenScenarioParser(object):
                             raise AttributeError("Cannot find actor '{}' for condition".format(
                                 collision_condition.attrib.get('entityRef', None)))
 
-                        atomic_cls = py_trees.meta.inverter(CollisionTest)
-                        atomic = atomic_cls(trigger_actor, other_actor=triggered_actor, terminate_on_failure=True,
-                                            name=condition_name)
+                        atomic = py_trees.decorators.Inverter(
+                            name=condition_name,
+                            child=CollisionTest(trigger_actor, other_actor=triggered_actor,
+                                                terminate_on_failure=True, name=condition_name))
 
                     elif collision_condition.find('ByType') is not None:
                         collision_type = collision_condition.find('ByType').attrib.get('type', None)
 
                         triggered_type = OpenScenarioParser.actor_types[collision_type]
 
-                        atomic_cls = py_trees.meta.inverter(CollisionTest)
-                        atomic = atomic_cls(trigger_actor, other_actor_type=triggered_type, terminate_on_failure=True,
-                                            name=condition_name)
+                        atomic = py_trees.decorators.Inverter(
+                            name=condition_name,
+                            child=CollisionTest(trigger_actor, other_actor_type=triggered_type,
+                                                terminate_on_failure=True, name=condition_name))
 
                     else:
-                        atomic_cls = py_trees.meta.inverter(CollisionTest)
-                        atomic = atomic_cls(trigger_actor, terminate_on_failure=True, name=condition_name)
+                        atomic = py_trees.decorators.Inverter(
+                            name=condition_name,
+                            child=CollisionTest(trigger_actor, terminate_on_failure=True, name=condition_name))
 
                 elif entity_condition.find('OffroadCondition') is not None:
                     off_condition = entity_condition.find('OffroadCondition')
                     condition_duration = ParameterRef(off_condition.attrib.get('duration'))
-                    atomic_cls = py_trees.meta.inverter(OffRoadTest)
-                    atomic = atomic_cls(trigger_actor, condition_duration, terminate_on_failure=True,
-                                        name=condition_name)
+                    atomic = py_trees.decorators.Inverter(
+                        name=condition_name,
+                        child=OffRoadTest(trigger_actor, condition_duration, terminate_on_failure=True,
+                                          name=condition_name))
                 elif entity_condition.find('TimeHeadwayCondition') is not None:
                     headtime_condition = entity_condition.find('TimeHeadwayCondition')
 
@@ -1113,7 +1102,7 @@ class OpenScenarioParser(object):
                         raise AttributeError(
                             "The condition {} cannot be mapped to a criterion atomic".format(class_name))
 
-                    atomic = py_trees.composites.Parallel("Evaluation Criteria for multiple ego vehicles")
+                    atomic = py_trees.composites.Parallel("Evaluation Criteria for multiple ego vehicles", policy=py_trees.common.ParallelPolicy.SuccessOnAll())
                     for triggered_actor in actor_list:
                         if arg_name != '':
                             atomic.add_child(criterion_instance(triggered_actor, arg_value))
@@ -1184,7 +1173,7 @@ class OpenScenarioParser(object):
             raise AttributeError("Unknown condition")
 
         if delay_atomic is not None and atomic is not None:
-            new_atomic = py_trees.composites.Sequence("delayed sequence")
+            new_atomic = py_trees.composites.Sequence("delayed sequence", memory=True)
             new_atomic.add_child(delay_atomic)
             new_atomic.add_child(atomic)
         else:
@@ -1248,7 +1237,7 @@ class OpenScenarioParser(object):
                     OpenScenarioParser.get_friction_from_env_action(global_action, catalogs))
 
                 env_behavior = py_trees.composites.Parallel(
-                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name=maneuver_name)
+                    policy=py_trees.common.ParallelPolicy.SuccessOnAll(), name=maneuver_name)
 
                 env_behavior.add_child(
                     oneshot_with_check(variable_name=maneuver_name + ">WeatherUpdate", behaviour=weather_behavior))

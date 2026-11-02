@@ -8,8 +8,6 @@ The scenario realizes the user controlled ego vehicle
 moving along the road and encountering a cyclist ahead.
 """
 
-from __future__ import print_function
-
 import math
 import py_trees
 import carla
@@ -64,7 +62,7 @@ class StationaryObjectCrossing(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
 
-        super(StationaryObjectCrossing, self).__init__("Stationaryobjectcrossing",
+        super().__init__("Stationaryobjectcrossing",
                                                        ego_vehicles,
                                                        config,
                                                        world,
@@ -108,8 +106,8 @@ class StationaryObjectCrossing(BasicScenario):
         # non leaf nodes
         root = py_trees.composites.Parallel(
             name="StaticObstacle",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        scenario_sequence = py_trees.composites.Sequence()
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne())
+        scenario_sequence = py_trees.composites.Sequence(name="ScenarioSequence", memory=True)
 
         # building tree
         root.add_child(scenario_sequence)
@@ -192,7 +190,7 @@ class DynamicObjectCrossing(BasicScenario):
         if self._direction not in ('left', 'right'):
             raise ValueError(f"'direction' must be either 'right' or 'left' but {self._direction} was given")
 
-        super(DynamicObjectCrossing, self).__init__("DynamicObjectCrossing",
+        super().__init__("DynamicObjectCrossing",
                                                     ego_vehicles,
                                                     config,
                                                     world,
@@ -309,7 +307,7 @@ class DynamicObjectCrossing(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         then after 60 seconds, a timeout stops the scenario
         """
-        sequence = py_trees.composites.Sequence(name="CrossingActor")
+        sequence = py_trees.composites.Sequence(name="CrossingActor", memory=True)
         if self.route_mode:
             total_dist = self._distance + 10
             sequence.add_child(LeaveSpaceInFront(total_dist))
@@ -319,7 +317,7 @@ class DynamicObjectCrossing(BasicScenario):
 
         # Wait until ego is close to the adversary
         trigger_adversary = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="TriggerAdversaryStart")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
             self.ego_vehicles[0], self._reaction_time, collision_location))
         trigger_adversary.add_child(InTriggerDistanceToLocation(
@@ -380,7 +378,7 @@ class DynamicObjectCrossing(BasicScenario):
             return trigger_tree
 
         parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="ScenarioTrigger")
 
         parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[0], 100))
 
@@ -526,7 +524,7 @@ class ParkingCrossingPedestrian(BasicScenario):
         the cyclist starts crossing the road once the condition meets,
         then after 60 seconds, a timeout stops the scenario
         """
-        sequence = py_trees.composites.Sequence(name="ParkingCrossingPedestrian")
+        sequence = py_trees.composites.Sequence(name="ParkingCrossingPedestrian", memory=True)
         if self.route_mode:
             total_dist = self._distance + 15
             sequence.add_child(LeaveSpaceInFront(total_dist))
@@ -536,7 +534,7 @@ class ParkingCrossingPedestrian(BasicScenario):
 
         # Wait until ego is close to the adversary
         trigger_adversary = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="TriggerAdversaryStart")
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="TriggerAdversaryStart")
         trigger_adversary.add_child(InTimeToArrivalToLocation(
             self.ego_vehicles[0], self._reaction_time, collision_location))
         trigger_adversary.add_child(InTriggerDistanceToLocation(
@@ -596,7 +594,7 @@ class ParkingCrossingPedestrian(BasicScenario):
             return trigger_tree
 
         parallel = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE, name="ScenarioTrigger")
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="ScenarioTrigger")
 
         parallel.add_child(MovePedestrianWithEgo(self.ego_vehicles[0], self.other_actors[1], 100))
 

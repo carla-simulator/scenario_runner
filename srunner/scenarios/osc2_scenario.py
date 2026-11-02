@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import copy
 import math
 import operator
@@ -9,7 +7,6 @@ import sys
 import csv
 from typing import List, Tuple
 
-import carla
 
 import py_trees
 from agents.navigation.global_route_planner import GlobalRoutePlanner
@@ -508,7 +505,7 @@ class OSC2Scenario(BasicScenario):
         # Use struct_parameters to store parameters of type struct, so that we can recognize it in keep constraint
         self.struct_parameters = {}
 
-        super(OSC2Scenario, self).__init__(
+        super().__init__(
             "OSC2Scenario",
             ego_vehicles=ego_vehicles,
             config=config,
@@ -583,19 +580,15 @@ class OSC2Scenario(BasicScenario):
             if composition_operator in ["serial", "parallel", "one_of"]:
                 if composition_operator == "serial":
                     self.__cur_behavior = py_trees.composites.Sequence(
-                        policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
-                        name="serial",
-                    )
+                        name="serial", memory=True)
                 elif composition_operator == "parallel":
                     self.__cur_behavior = py_trees.composites.Parallel(
-                        policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
+                        policy=py_trees.common.ParallelPolicy.SuccessOnAll(),
                         name="parallel",
                     )
                 elif composition_operator == "one_of":
                     self.__cur_behavior = py_trees.composites.Sequence(
-                        policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
-                        name="one_of",
-                    )
+                        name="one_of", memory=True)
                     do_member_list = []
                     for child in node.get_children():
                         if isinstance(child, ast_node.DoMember):
@@ -664,11 +657,11 @@ class OSC2Scenario(BasicScenario):
 
         def visit_wait_directive(self, node: ast_node.WaitDirective):
             behaviors = py_trees.composites.Sequence(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="wait"
-            )
+name="wait"
+            , memory=True)
             subbehavior = py_trees.composites.Sequence(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="behavior"
-            )
+name="behavior"
+            , memory=True)
 
             if node.get_child_count() == 1 and isinstance(
                 node.get_child(0), ast_node.EventCondition
@@ -722,8 +715,8 @@ class OSC2Scenario(BasicScenario):
 
         def visit_emit_directive(self, node: ast_node.EmitDirective):
             behaviors = py_trees.composites.Sequence(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL, name="emit"
-            )
+name="emit"
+            , memory=True)
             function_name = node.event_name
             arguments = self.visit_children(node)
             actor = arguments[0][1]
@@ -777,7 +770,7 @@ class OSC2Scenario(BasicScenario):
                 return None
 
             behavior = py_trees.composites.Parallel(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE,
+                policy=py_trees.common.ParallelPolicy.SuccessOnOne(),
                 name=behavior_invocation_name
                 + " duration="
                 + str(int(self.__duration)),
@@ -790,9 +783,7 @@ class OSC2Scenario(BasicScenario):
             behavior.add_child(timeout)
 
             actor_drive = py_trees.composites.Sequence(
-                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL,
-                name=behavior_invocation_name,
-            )
+                name=behavior_invocation_name, memory=True)
 
             modifier_invocation_no_occur = True
 

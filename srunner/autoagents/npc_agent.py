@@ -7,8 +7,6 @@
 This module provides an NPC agent to control the ego vehicle
 """
 
-from __future__ import print_function
-
 import carla
 from agents.navigation.basic_agent import BasicAgent
 

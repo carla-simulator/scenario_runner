@@ -32,7 +32,7 @@ class VehicleTeleportControl(BasicControl):
     def __init__(self, actor, args=None):
         self._prev_yaw = None
         self._distance_threshold = 0.01
-        super(VehicleTeleportControl, self).__init__(actor)
+        super().__init__(actor)
 
     def reset(self):
         """

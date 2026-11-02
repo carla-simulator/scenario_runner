@@ -13,7 +13,6 @@ import glob
 import os
 import xml.etree.ElementTree as ET
 
-import carla
 
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
 from srunner.scenarioconfigs.route_scenario_configuration import RouteConfiguration
@@ -24,6 +23,27 @@ class ScenarioConfigurationParser(object):
     """
     Pure static class providing access to parser methods for scenario configuration files (*.xml)
     """
+
+    @staticmethod
+    def _additional_config_files(additional_config_file_name, extensions=('.xml',)):
+        """
+        Expands the --configFile argument: a file, a folder searched for config
+        files, or several of either separated by commas.
+        """
+        files = []
+        for entry in additional_config_file_name or []:
+            for item in str(entry).split(','):
+                item = item.strip()
+                if not item:
+                    continue
+                if os.path.isdir(item):
+                    for ext in extensions:
+                        files += sorted(glob.glob(os.path.join(item, '*' + ext)))
+                elif os.path.isfile(item):
+                    files.append(item)
+                else:
+                    print("WARNING: '{}' is not a config file or folder".format(item))
+        return files
 
     @staticmethod
     def parse_scenario_configuration(scenario_name, additional_config_file_name):
@@ -45,8 +65,7 @@ class ScenarioConfigurationParser(object):
         scenario_configurations = []
 
         list_of_config_files = glob.glob("{}/srunner/examples/*.xml".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
-        if additional_config_file_name != '':
-            list_of_config_files.append(additional_config_file_name)
+        list_of_config_files += ScenarioConfigurationParser._additional_config_files(additional_config_file_name)
 
         for file_name in list_of_config_files:
             tree = ET.parse(file_name)
@@ -102,8 +121,8 @@ class ScenarioConfigurationParser(object):
 
         list_of_config_files = glob.glob("{}/srunner/examples/*.xml".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
         list_of_config_files += glob.glob("{}/srunner/examples/*.xosc".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
-        if additional_config_file_name != '':
-            list_of_config_files.append(additional_config_file_name)
+        list_of_config_files += ScenarioConfigurationParser._additional_config_files(
+            additional_config_file_name, ('.xml', '.xosc'))
 
         scenarios = []
         for file_name in list_of_config_files:

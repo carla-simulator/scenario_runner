@@ -18,8 +18,6 @@ The atomics are implemented with py_trees and make use of the AtomicCondition
 base class
 """
 
-from __future__ import print_function
-
 import operator
 import datetime
 import math
@@ -34,6 +32,7 @@ from srunner.scenariomanager.timer import GameTime
 from srunner.tools.scenario_helper import get_distance_along_route, get_distance_between_actors
 
 import srunner.tools as sr_tools
+from srunner.tools.blackboard import get_blackboard
 
 EPSILON = 0.001
 
@@ -57,7 +56,7 @@ class AtomicCondition(py_trees.behaviour.Behaviour):
         self.logger.debug("%s.__init__()" % (self.__class__.__name__))
         self.name = name
 
-    def setup(self, unused_timeout=15):
+    def setup(self, **kwargs):
         """
         Default setup
         """
@@ -519,11 +518,7 @@ class TimeOfDayComparison(AtomicCondition):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        try:
-            check_dtime = operator.attrgetter("Datetime")
-            dtime = check_dtime(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        dtime = get_blackboard("Datetime", None)
 
         if self._comparison_operator(dtime, self._datetime):
             new_status = py_trees.common.Status.SUCCESS

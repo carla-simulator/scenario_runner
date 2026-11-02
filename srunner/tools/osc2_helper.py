@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import math
 import operator
 from typing import List, Tuple

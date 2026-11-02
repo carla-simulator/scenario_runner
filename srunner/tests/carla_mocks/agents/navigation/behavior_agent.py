@@ -39,7 +39,7 @@ class BehaviorAgent(BasicAgent):
             :param behavior: type of agent to apply
         """
 
-        super(BehaviorAgent, self).__init__(vehicle)
+        super().__init__(vehicle)
         self._look_ahead_steps = 0
 
         # Vehicle information

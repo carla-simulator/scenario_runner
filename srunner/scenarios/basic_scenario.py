@@ -9,9 +9,6 @@
 This module provide BasicScenario, the basic class of all the scenarios.
 """
 
-from __future__ import print_function
-
-import operator
 import py_trees
 
 import carla
@@ -23,6 +20,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import UpdateAllActorControls
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import Criterion
+from srunner.tools.blackboard import get_blackboard, set_blackboard
 
 
 class BasicScenario(object):
@@ -71,10 +69,10 @@ class BasicScenario(object):
             world.wait_for_tick()
 
         # Main scenario tree
-        self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        self.scenario_tree = py_trees.composites.Parallel(name, policy=py_trees.common.ParallelPolicy.SuccessOnOne())
 
         # Add a trigger and end condition to the behavior to ensure it is only activated when it is relevant
-        self.behavior_tree = py_trees.composites.Sequence()
+        self.behavior_tree = py_trees.composites.Sequence(name="BehaviorTree", memory=True)
 
         trigger_behavior = self._setup_scenario_trigger(config)
         if trigger_behavior:
@@ -95,9 +93,9 @@ class BasicScenario(object):
             self.scenario_tree.add_child(lights)
 
         # Create the weather behavior
-        # weather = self._create_weather_behavior()
-        # if weather:
-        #     self.scenario_tree.add_child(weather)
+        weather = self._create_weather_behavior()
+        if weather:
+            self.scenario_tree.add_child(weather)
 
         # And then add it to the main tree
         self.scenario_tree.add_child(self.behavior_tree)
@@ -116,9 +114,9 @@ class BasicScenario(object):
                     criterion.terminate_on_failure = terminate_on_failure
 
                 self.criteria_tree = py_trees.composites.Parallel(name="Test Criteria",
-                                                                  policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+                                                                  policy=py_trees.common.ParallelPolicy.SuccessOnAll())
                 self.criteria_tree.add_children(criteria)
-                self.criteria_tree.setup(timeout=1)
+                self.criteria_tree.setup()
 
             else:
                 raise ValueError("WARNING: Scenario {} couldn't be setup, make sure the criteria is either "
@@ -134,7 +132,7 @@ class BasicScenario(object):
         # Add other nodes
         self.scenario_tree.add_child(UpdateAllActorControls())
 
-        self.scenario_tree.setup(timeout=1)
+        self.scenario_tree.setup()
 
     def _initialize_environment(self, world):
         """
@@ -143,7 +141,7 @@ class BasicScenario(object):
         """
 
         # Set the appropriate weather conditions
-        # world.set_weather(self.config.weather)
+        world.set_weather(self.config.weather)
 
         # Set the appropriate road friction
         if self.config.friction is not None:
@@ -210,9 +208,10 @@ class BasicScenario(object):
             return None
 
         # Scenario is part of a route.
-        end_sequence = py_trees.composites.Sequence()
+        end_sequence = py_trees.composites.Sequence(name="EndSequence", memory=True)
         name = "Reset Blackboard Variable: {} ".format(config.route_var_name)
-        end_sequence.add_child(py_trees.blackboard.SetBlackboardVariable(name, config.route_var_name, False))
+        end_sequence.add_child(py_trees.behaviours.SetBlackboardVariable(
+            name, config.route_var_name, False, overwrite=True))
         end_sequence.add_child(WaitForever())  # scenario can't stop the route
 
         return end_sequence
@@ -316,14 +315,10 @@ class BasicScenario(object):
 
         # Cleanup all instantiated controllers
         actor_dict = {}
-        try:
-            check_actors = operator.attrgetter("ActorsWithController")
-            actor_dict = check_actors(py_trees.blackboard.Blackboard())
-        except AttributeError:
-            pass
+        actor_dict = get_blackboard("ActorsWithController", {})
         for actor_id in actor_dict:
             actor_dict[actor_id].reset()
-        py_trees.blackboard.Blackboard().set("ActorsWithController", {}, overwrite=True)
+        set_blackboard("ActorsWithController", {})
 
     def remove_all_actors(self):
         """

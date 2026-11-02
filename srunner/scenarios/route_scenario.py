@@ -9,13 +9,6 @@
 This module provides Challenge routes as standalone scenarios
 """
 
-from __future__ import print_function
-
-import glob
-import os
-import sys
-import importlib
-import inspect
 import traceback
 import py_trees
 
@@ -45,6 +38,7 @@ from srunner.scenariomanager.lights_sim import RouteLightsBehavior
 from srunner.scenariomanager.timer import RouteTimeoutBehavior
 
 from srunner.tools.route_parser import RouteParser, DIST_THRESHOLD
+from srunner.tools.scenario_class_loader import ScenarioClassLoader
 from srunner.tools.route_manipulation import interpolate_trajectory
 
 
@@ -58,6 +52,14 @@ LEGACY_PARAMETER_FALLBACKS = {
     'ConstructionObstacleTwoWays': 'ConstructionObstacleTwoWaysLegacy',
     'ParkingExit': 'ParkingExitLegacy',
 }
+
+
+def _adopt(node):
+    """Detaches a node from the tree its scenario built, so the route can own it.
+    py_trees allows a single parent, and BasicScenario parents these to its own tree."""
+    if node.parent is not None:
+        node.parent.remove_child(node)
+    return node
 
 
 class RouteScenario(BasicScenario):
@@ -93,7 +95,7 @@ class RouteScenario(BasicScenario):
             world, ego_vehicle, sampled_scenario_definitions, timeout=self.timeout, debug=debug_mode > 0
         )
 
-        super(RouteScenario, self).__init__(
+        super().__init__(
             config.name, [ego_vehicle], config, world, debug_mode > 1, False, criteria_enable
         )
 
@@ -200,32 +202,12 @@ class RouteScenario(BasicScenario):
 
         return sampled_scenarios
 
-    def get_all_scenario_classes(self):
-
-        # Path of all scenario at "srunner/scenarios" folder
-        scenarios_list = glob.glob("{}/srunner/scenarios/*.py".format(os.getenv('SCENARIO_RUNNER_ROOT', "./")))
-
-        all_scenario_classes = {}
-
-        for scenario_file in scenarios_list:
-
-            # Get their module
-            module_name = os.path.basename(scenario_file).split('.')[0]
-            sys.path.insert(0, os.path.dirname(scenario_file))
-            try:
-                scenario_module = importlib.import_module(module_name)
-            except Exception:  # pylint: disable=broad-except
-                # Skip scenario modules with unavailable dependencies (e.g. the
-                # OpenSCENARIO 2.0 support and its antlr4 runtime requirement)
-                sys.path.pop(0)
-                continue
-
-            # And their members of type class
-            for member in inspect.getmembers(scenario_module, inspect.isclass):
-                # TODO: Filter out any class that isn't a child of BasicScenario
-                all_scenario_classes[member[0]] = member[1]
-
-        return all_scenario_classes
+    def get_all_scenario_classes(self, debug=False):
+        """
+        The shipped scenarios plus whatever --additionalScenario registered, so a
+        route can name a user's scenario exactly as it names a built-in one.
+        """
+        return ScenarioClassLoader.get_all_scenario_classes(debug)
 
     def _build_scenarios(
         self,
@@ -240,7 +222,7 @@ class RouteScenario(BasicScenario):
         Initializes the class of all the scenarios that will be present in the route.
         If a class fails to be initialized, a warning is printed but the route execution isn't stopped
         """
-        all_scenario_classes = self.get_all_scenario_classes()
+        all_scenario_classes = self.get_all_scenario_classes(debug)
         self.list_scenarios = []
         ego_data = ActorConfigurationData(ego_vehicle.type_id, ego_vehicle.get_transform(), 'hero')
 
@@ -308,14 +290,14 @@ class RouteScenario(BasicScenario):
         scenario_trigger_distance = DIST_THRESHOLD  # Max trigger distance between route and scenario
 
         behavior = py_trees.composites.Parallel(name="Route Behavior",
-                                                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+                                                policy=py_trees.common.ParallelPolicy.SuccessOnAll())
 
         scenario_behaviors = []
         blackboard_list = []
 
         for scenario in self.list_scenarios:
             if scenario.behavior_tree is not None:
-                scenario_behaviors.append(scenario.behavior_tree)
+                scenario_behaviors.append(_adopt(scenario.behavior_tree))
                 blackboard_list.append([scenario.config.route_var_name,
                                         scenario.config.trigger_points[0].location,
                                         scenario.name])
@@ -337,7 +319,7 @@ class RouteScenario(BasicScenario):
         and adds the scenario specific ones, which will only be active during their scenario
         """
         criteria = py_trees.composites.Parallel(name="Criteria",
-                                                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+                                                policy=py_trees.common.ParallelPolicy.SuccessOnOne())
 
         # End condition
         criteria.add_child(RouteCompletionTest(self.ego_vehicles[0], route=self.route))
@@ -412,13 +394,13 @@ class RouteScenario(BasicScenario):
         var_name = scenario.config.route_var_name
         check_name = "WaitForBlackboardVariable: {}".format(var_name)
 
-        criteria_tree = py_trees.composites.Sequence(name=scenario_name)
+        criteria_tree = py_trees.composites.Sequence(name=scenario_name, memory=True)
         criteria_tree.add_child(WaitForBlackboardVariable(var_name, True, False, name=check_name))
 
         scenario_criteria = py_trees.composites.Parallel(name=scenario_name,
-                                                policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+                                                policy=py_trees.common.ParallelPolicy.SuccessOnOne())
         for criterion in criteria:
-            scenario_criteria.add_child(criterion)
+            scenario_criteria.add_child(_adopt(criterion))
         scenario_criteria.add_child(WaitForBlackboardVariable(var_name, False, None, name=check_name))
 
         criteria_tree.add_child(scenario_criteria)

@@ -29,7 +29,7 @@ class PedestrianControl(BasicControl):
         if not isinstance(actor, carla.Walker):
             raise RuntimeError("PedestrianControl: The to be controlled actor is not a pedestrian")
 
-        super(PedestrianControl, self).__init__(actor)
+        super().__init__(actor)
 
     def reset(self):
         """

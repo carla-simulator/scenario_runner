@@ -1,8 +1,6 @@
 import math
 import random
 import re
-import sys
-from typing import List
 
 from srunner.osc2_dm.physical_object import *
 

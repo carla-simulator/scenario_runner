@@ -9,8 +9,6 @@
 Scenario with low visibility, the ego performs a turn only to find out that the end is blocked by another vehicle.
 """
 
-from __future__ import print_function
-
 import carla
 import py_trees
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
@@ -26,10 +24,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import In
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import HandleJunctionScenario
 
-from srunner.tools.scenario_helper import (generate_target_waypoint,
-                                           generate_target_waypoint_in_route,
-                                           get_value_parameter,
-                                           convert_dict_to_location)
+from srunner.tools.scenario_helper import generate_target_waypoint, generate_target_waypoint_in_route, get_value_parameter
 
 
 class BlockedIntersection(BasicScenario):
@@ -104,7 +99,7 @@ class BlockedIntersection(BasicScenario):
         """
         Just wait for a while after the ego closes in on the blocker, then remove it.
         """
-        sequence = py_trees.composites.Sequence(name="BlockedIntersection")
+        sequence = py_trees.composites.Sequence(name="BlockedIntersection", memory=True)
 
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
@@ -117,10 +112,10 @@ class BlockedIntersection(BasicScenario):
             ))
         # Ego go behind the blocker
         main_behavior = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="MainBehavior")
         main_behavior.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
-        behavior = py_trees.composites.Sequence(name="Approach and Wait")
+        behavior = py_trees.composites.Sequence(name="Approach and Wait", memory=True)
         behavior.add_child(ActorTransformSetter(self.other_actors[0], self._blocker_transform, True))
         behavior.add_child(HandBrakeVehicle(self.other_actors[0], 1))
         behavior.add_child(InTriggerDistanceToVehicle(

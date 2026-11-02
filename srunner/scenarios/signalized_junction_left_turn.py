@@ -10,7 +10,6 @@ is making a left turn
 """
 
 import py_trees
-from numpy import random
 
 import carla
 
@@ -179,7 +178,7 @@ class SignalizedJunctionLeftTurn(JunctionLeftTurn):
         Hero vehicle is turning left in an urban area at a signalized intersection,
         where, a flow of actors coming straight is present.
         """
-        sequence = py_trees.composites.Sequence(name="SignalizedJunctionLeftTurn")
+        sequence = py_trees.composites.Sequence(name="SignalizedJunctionLeftTurn", memory=True)
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
@@ -191,8 +190,8 @@ class SignalizedJunctionLeftTurn(JunctionLeftTurn):
             ))
             sequence.add_child(ChangeOppositeBehavior(active=False))
 
-        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        end_condition = py_trees.composites.Sequence()
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Root")
+        end_condition = py_trees.composites.Sequence(name="EndCondition", memory=True)
         end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
         root.add_child(end_condition)
@@ -200,7 +199,7 @@ class SignalizedJunctionLeftTurn(JunctionLeftTurn):
             self._source_wp, self._sink_wp, self._source_dist_interval, 2, self._flow_speed))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
 
-        tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
+        tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior", memory=True)
         tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
         tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
         root.add_child(tl_freezer_sequence)
@@ -229,7 +228,7 @@ class NonSignalizedJunctionLeftTurn(JunctionLeftTurn):
         Hero vehicle is turning left in an urban area at a signalized intersection,
         where, a flow of actors coming straight is present.
         """
-        sequence = py_trees.composites.Sequence(name="NonSignalizedJunctionLeftTurn")
+        sequence = py_trees.composites.Sequence(name="NonSignalizedJunctionLeftTurn", memory=True)
         if self.route_mode:
             sequence.add_child(HandleJunctionScenario(
                 clear_junction=True,
@@ -241,8 +240,8 @@ class NonSignalizedJunctionLeftTurn(JunctionLeftTurn):
             ))
             sequence.add_child(ChangeOppositeBehavior(active=False))
 
-        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        end_condition = py_trees.composites.Sequence()
+        root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Root")
+        end_condition = py_trees.composites.Sequence(name="EndCondition", memory=True)
         end_condition.add_child(WaitEndIntersection(self.ego_vehicles[0]))
         end_condition.add_child(DriveDistance(self.ego_vehicles[0], self._end_distance))
         root.add_child(end_condition)

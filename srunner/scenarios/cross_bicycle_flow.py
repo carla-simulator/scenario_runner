@@ -9,8 +9,6 @@
 Scenarios in which the ego has to cross a flow of bycicles
 """
 
-from __future__ import print_function
-
 import py_trees
 import carla
 
@@ -135,14 +133,14 @@ class CrossingBicycleFlow(BasicScenario):
         """
 
         root = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Root")
         root.add_child(BicycleFlow(self._plan, self._source_dist_interval, self._sink_distance, self._flow_speed, True))
         root.add_child(ScenarioTimeout(self._scenario_timeout, self.config.name))
         root.add_child(WaitEndIntersection(self.ego_vehicles[0]))
 
         # Freeze the traffic lights to allow the flow to populate the junction
         if self._signalized_junction:
-            tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior")
+            tl_freezer_sequence = py_trees.composites.Sequence("Traffic Light Behavior", memory=True)
             tl_freezer_sequence.add_child(TrafficLightFreezer(self._init_tl_dict, duration=self._green_light_delay))
             tl_freezer_sequence.add_child(TrafficLightFreezer(self._flow_tl_dict))
             root.add_child(tl_freezer_sequence)
@@ -151,7 +149,7 @@ class CrossingBicycleFlow(BasicScenario):
         if not self.route_mode:
             return root
 
-        sequence = py_trees.composites.Sequence()
+        sequence = py_trees.composites.Sequence(name="Sequence", memory=True)
         sequence.add_child(HandleJunctionScenario(
             clear_junction=True,
             clear_ego_entry=True,

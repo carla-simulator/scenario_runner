@@ -7,12 +7,9 @@
 Module used to parse all the route and scenario configuration parameters.
 """
 
-import json
-import math
 import xml.etree.ElementTree as ET
 
 import carla
-from agents.navigation.local_planner import RoadOption
 from srunner.scenarioconfigs.route_scenario_configuration import RouteScenarioConfiguration
 from srunner.scenarioconfigs.scenario_configuration import ScenarioConfiguration, ActorConfigurationData
 

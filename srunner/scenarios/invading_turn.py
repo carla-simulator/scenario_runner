@@ -11,8 +11,6 @@ when a vehicle coming from the opposite lane invades the ego's lane,
 forcing the ego to move right to avoid a possible collision.
 """
 
-from __future__ import print_function
-
 import py_trees
 import carla
 
@@ -25,7 +23,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import Wa
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.background_manager import RemoveRoadLane, ChangeOppositeBehavior, ReAddRoadLane
-from srunner.tools.scenario_helper import convert_dict_to_location, get_value_parameter
+from srunner.tools.scenario_helper import get_value_parameter
 
 
 class InvadingTurn(BasicScenario):
@@ -123,7 +121,7 @@ class InvadingTurn(BasicScenario):
         """
         The adversary vehicle will go to the target place while invading another lane.
         """
-        sequence = py_trees.composites.Sequence("InvadingTurn")
+        sequence = py_trees.composites.Sequence("InvadingTurn", memory=True)
 
         if self.route_mode:
             sequence.add_child(RemoveRoadLane(self._reference_waypoint))
@@ -131,7 +129,7 @@ class InvadingTurn(BasicScenario):
 
         sequence.add_child(BatchActorTransformSetter(self._obstacle_transforms))
 
-        main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        main_behavior = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="MainBehavior")
         main_behavior.add_child(InvadingActorFlow(
             self._source_wp, self._sink_wp, self.ego_vehicles[0], self._flow_frequency, offset=self._true_offset))
 

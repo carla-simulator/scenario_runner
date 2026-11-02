@@ -9,8 +9,6 @@
 Scenario in which the ego has to yield its lane to emergency vehicle.
 """
 
-from __future__ import print_function
-
 import py_trees
 import carla
 
@@ -128,7 +126,7 @@ class YieldToEmergencyVehicle(BasicScenario):
                 - DriveDistance
         - ReAddRoadLane
         """
-        sequence = py_trees.composites.Sequence(name="YieldToEmergencyVehicle")
+        sequence = py_trees.composites.Sequence(name="YieldToEmergencyVehicle", memory=True)
 
         if self.route_mode:
             sequence.add_child(RemoveRoadLane(self._reference_waypoint))
@@ -138,15 +136,15 @@ class YieldToEmergencyVehicle(BasicScenario):
         )
 
         main_behavior = py_trees.composites.Parallel(
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE
-        )
+            policy=py_trees.common.ParallelPolicy.SuccessOnOne()
+        , name="MainBehavior")
 
-        end_condition_1 = py_trees.composites.Sequence()
+        end_condition_1 = py_trees.composites.Sequence(name="EndCondition1", memory=True)
         end_condition_1.add_child(InTriggerDistanceToVehicle(
             self.ego_vehicles[0], self.other_actors[0], self._trigger_distance))
         end_condition_1.add_child(Idle(self._ev_idle_time))
 
-        end_condition_2 = py_trees.composites.Sequence()
+        end_condition_2 = py_trees.composites.Sequence(name="EndCondition2", memory=True)
         end_condition_2.add_child(
             WaitUntilInFront(self.other_actors[0], self.ego_vehicles[0])
         )

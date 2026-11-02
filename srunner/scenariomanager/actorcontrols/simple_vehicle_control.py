@@ -87,7 +87,7 @@ class SimpleVehicleControl(BasicControl):
     """
 
     def __init__(self, actor, args=None):
-        super(SimpleVehicleControl, self).__init__(actor)
+        super().__init__(actor)
         self._generated_waypoint_list = []
         self._last_update = None
         self._consider_traffic_lights = False
