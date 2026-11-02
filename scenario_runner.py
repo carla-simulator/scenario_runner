@@ -64,7 +64,7 @@ except Exception:  # antlr missing or incompatible
     OSC2_SUPPORT = False
 
 # Minimum version of CARLA that is required
-MIN_CARLA_VERSION = '0.9.14'
+MIN_CARLA_VERSION = '1.0'
 
 
 class ScenarioRunner(object):

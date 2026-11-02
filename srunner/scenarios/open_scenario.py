@@ -13,6 +13,7 @@ from srunner.tools.util import strtobool
 import itertools
 import os
 import py_trees
+import py_trees.decorators
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (

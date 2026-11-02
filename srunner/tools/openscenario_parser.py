@@ -17,6 +17,7 @@ import math
 import operator
 
 import py_trees
+import py_trees.decorators
 import carla
 
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
