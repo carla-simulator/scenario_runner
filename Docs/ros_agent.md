@@ -1,7 +1,7 @@
-# ROS-based Challenge Agent
+# ROS agent
 
 Interfacing CARLA from ROS is normally done via [CARLA ROS Bridge](https://github.com/carla-simulator/ros-bridge).
-In Challenge Mode this bridging functionality is provided by a RosAgent. It uses the same topics and message-types for the sensors but does not publish tf-transformations.
+In route mode this bridging functionality is provided by a `RosAgent`. It uses the same topics and message-types for the sensors but does not publish tf-transformations.
  
 # Requirements
 
@@ -9,7 +9,7 @@ In Challenge Mode this bridging functionality is provided by a RosAgent. It uses
 
 ## Setup
 
-To enable your stack within challenge mode, the following steps need to be taken:
+To drive the ego from a ROS stack, the following steps need to be taken:
 
 1. Define Sensor Setup
 2. Define Startup
@@ -25,7 +25,7 @@ Derive from RosAgent and implement the sensors() method.
         def sensors(self):
             return [ <sensor-definition> ]
 
-As an example for the sensor definition, see [HumanAgent.py](../srunner/autoagents/human_agent.py).
+As an example for the sensor definition, see `srunner/autoagents/human_agent.py`.
 
 
 ### Define Startup

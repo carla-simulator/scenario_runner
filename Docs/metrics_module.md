@@ -7,9 +7,9 @@ This section covers an explanation of the different elements that form the modul
 
 * [__Structure of the module__](#structure-of-the-module)  
 * [__How to use the metrics module__](#how-to-use-the-metrics-module)  
-	* [1. Record a scenario](#1.-record-a-scenario)  
-	* [2. Define the metrics](#2.-run-the-metrics-manager)  
-	* [3. Run the metrics manager](#3.-run-the-metrics-manager)  
+	* [1. Record a scenario](#1-record-a-scenario)  
+	* [2. Define the metrics](#2-define-the-metrics)  
+	* [3. Run the metrics manager](#3-run-the-metrics-manager)  
 * [__Recording queries reference__](#recording-queries-reference)  
 	* [Generic actor data](#generic-actor-data)  
 	* [Generic simulation data](#generic-simulation-data)  
@@ -29,9 +29,9 @@ Similarly to the main ScenarioRunner module, the Metrics module is run using a m
 
 *   __`metrics_manager.py`__ — The main script of the module. Run this to show the results of the set of metrics. The script has the usual `host` and `port` arguments, and some more to set the metrics and recording to be used.  
 	*   `host` *(string)* – IP address where a CARLA simulation is running. Default is `(127.0.0.1)`.  
-	*   `port` *(int)* – TCP port where the CARLA simulation is running. Default are `2000` and `2001`.  
-	*   `metrics` — Path to the metrics to be used.  
-	*   `log` — Path to the `.log` file containing the recording (relative to the environment variable `SCENARIO_RUNNER_ROOT`).  
+	*   `port` *(int)* – TCP port where the CARLA simulation is running. Default is `2000`.  
+	*   `metric` — Path to the `.py` file defining the metric to be used. Required.  
+	*   `log` — Path to the `.log` file containing the recording (relative to the environment variable `SCENARIO_RUNNER_ROOT`). Required.  
 	*   `criteria` *(optional)* — Path to a JSON file with the criteria of the scenario.  
 
 The rest of the elements that shape the module can be found in the `srunner/metrics` folder. These folder has been divided in three subfolders.

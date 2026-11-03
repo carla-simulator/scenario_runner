@@ -1,146 +1,130 @@
-# Getting Started Tutorial
+# First steps
 
-!!! important
+ScenarioRunner has four modes, one per kind of scenario definition. They share the connection options and the result reporting, and differ in what they take as input and in who drives the ego vehicle.
 
-    This tutorial refers to the latest versions of CARLA (at least 0.9.5)
+| Mode | Option | Input | Who drives the ego |
+|---|---|---|---|
+| [Python scenario](#run-a-python-scenario) | `--scenario` | a configuration name from `srunner/examples/*.xml` | you, in another client |
+| [OpenSCENARIO 1.x](#run-an-openscenario-file) | `--openscenario` | a `.xosc` file | the file's controller, or you |
+| [OpenSCENARIO 2.0](#run-an-openscenario-20-file) | `--openscenario2` | an `.osc` file | the file's controller, or you |
+| [Route](#run-a-route) | `--route` | a route file, plus `--agent` | a driving agent, inside ScenarioRunner |
 
-Welcome to the ScenarioRunner for CARLA! This tutorial provides the basic steps
-for getting started using the ScenarioRunner for CARLA.
+This page assumes the install of [Get ScenarioRunner](getting_scenariorunner.md) and a CARLA server already running.
 
-Download the latest release from our GitHub page and extract all the contents of
-the package in a folder of your choice.
+---
+## Run a Python scenario
 
-The release package contains the following
+A Python scenario is a class in `srunner/scenarios/` plus a configuration in `srunner/examples/*.xml` that gives it a town, the ego spawn point and its parameters. You select it by the **configuration name**, such as `FollowLeadingVehicle_1`, not by the class name. `--list` prints the names this checkout can run.
 
-- The ScenarioRunner for CARLA
-- A few example scenarios written in Python.
-
-## Installing prerequisites
-
-The current version is designed to be used with Ubuntu 16.04, Python 2.7 or
-Python 3.5. Depending on your Python version, execute:
-
+```sh
+python3 scenario_runner.py --scenario FollowLeadingVehicle_1 --reloadWorld --output
 ```
 
+`--reloadWorld` loads the town the configuration asks for; without it the scenario refuses to start unless the server is already on that map. `--output` prints the result tables when the run ends.
 
-#Python 2.x
-sudo apt remove python-networkx #if installed, remove old version of networkx
-pip2 install --user -r requirements.txt
-#Python 3.x
-sudo apt remove python3-networkx #if installed, remove old version of networkx
-pip3 install --user -r requirements.txt
+ScenarioRunner does **not** drive the ego vehicle in this mode. It spawns it and waits. In a second terminal, give it a driver:
+
+```sh
+python3 manual_control.py        # drive with the keyboard
+python3 manual_control.py -a     # or hand it to the autopilot
 ```
 
-Note: py-trees newer than v0.8 is _NOT_ supported.
+`manual_control.py` attaches to the vehicle whose `role_name` is `hero`. If nobody drives, the scenario's start trigger never fires and the run ends at the timeout with `GLOBAL RESULT TIMEOUT`.
 
-## Running the follow vehicle example
+To run every configuration of one class in sequence, prefix the class name with `group:`:
 
-First of all, you need to get latest master branch from CARLA. Then you have to
-include CARLA Python API to the Python path:
-
-```Bash
-export CARLA_ROOT=/path/to/your/carla/installation
-export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-<VERSION>.egg:${CARLA_ROOT}/PythonAPI/carla/agents:${CARLA_ROOT}/PythonAPI/carla
+```sh
+python3 scenario_runner.py --scenario group:FollowLeadingVehicle --reloadWorld --output
 ```
 
-NOTE: ${CARLA_ROOT} needs to be replaced with your CARLA installation directory,
-and <VERSION> needs to be replaced with the correct string.
-If you build CARLA from source, the egg files maybe located in:
-${CARLA_ROOT}/PythonAPI/dist/ instead of ${CARLA_ROOT}/PythonAPI.
+---
+## Run an OpenSCENARIO file
 
-Now, you can start the CARLA server from ${CARLA_ROOT}
+An OpenSCENARIO file carries its own map, entities and ego, so there is no configuration name and no town lookup.
 
-```
-./CarlaUE4.sh
+```sh
+python3 scenario_runner.py --openscenario srunner/osc_examples/FollowLeadingVehicle.xosc --output
 ```
 
-Start the example scenario (follow a leading vehicle) in an extra terminal:
+`srunner/osc_examples/` ships 16 `.xosc` files. Whether you have to drive the ego depends on the controller the file assigns to it: `external_control` waits for another client, exactly like a Python scenario, while the controllers in `srunner/scenariomanager/actorcontrols/` drive the actor from inside ScenarioRunner. `OscControllerExample.xosc` shows how a controller is assigned.
 
-```
-python scenario_runner.py --scenario FollowLeadingVehicle_1 --reloadWorld
-```
+`--openscenarioparams` overrides entries of the file's global `ParameterDeclarations`:
 
-If you require help or want to explore other command line parameters, start the scenario
-runner as follows:
-
-```
-python scenario_runner.py --help
+```sh
+python3 scenario_runner.py --openscenario srunner/osc_examples/FollowLeadingVehicle.xosc \
+    --openscenarioparams 'leadingSpeed: 6.0' --output
 ```
 
-To control the ego vehicle within the scenario, open another terminal and run:
+ScenarioRunner implements a subset of the standard; [OpenSCENARIO support](openscenario_support.md) lists what is covered.
 
-```
-python manual_control.py
-```
+---
+## Run an OpenSCENARIO 2.0 file
 
-Note: If you do not wish to automatically (re-)load the CARLA world, you can
-skip the command line option _--reloadWorld_
+OpenSCENARIO 2.0 is a different language in a different file format, not a newer version of the XML. It needs `antlr4-python3-runtime` installed.
 
-## Running all scenarios of one scenario class
-
-Similar to the previous example, it is also possible to execute a sequence of scenarios,
-that belong to the same class, e.g. the "FollowLeadingVehicle" class.
-
-The only difference is, that you start the scenario_runner as follows:
-
-```
-python scenario_runner.py --scenario group:FollowLeadingVehicle
+```sh
+python3 scenario_runner.py --openscenario2 srunner/osc_examples/cut_in_and_slow_right.osc
 ```
 
-## Running other scenarios
+`srunner/osc_examples/` ships 17 `.osc` files. Support is experimental; see [OpenSCENARIO 2.0](README_OpenSCENARIO_2.0.md).
 
-A list of supported scenarios is provided in
-[List of Supported Scenarios](list_of_scenarios.md). Please note that
-different scenarios may take place in different CARLA towns. This has to be
-respected when launching the CARLA server.
+---
+## Run a route
 
-## Running scenarios using the OpenSCENARIO format
+Route mode drives the ego along a route given as waypoints and triggers the scenarios placed along it at their trigger points. This is the mode the [CARLA Leaderboard](https://leaderboard.carla.org/) is built on, and the only one in which ScenarioRunner drives the ego itself.
 
-To run a scenario, which is based on the OpenSCENARIO format, please run the ScenarioRunner as follows:
-
-```
-python scenario_runner.py --openscenario <path/to/xosc-file>
+```sh
+python3 scenario_runner.py --route srunner/data/routes_town10.xml --route-id 0 \
+    --agent srunner/autoagents/npc_agent.py --output
 ```
 
-Please note that the OpenSCENARIO support and the OpenSCENARIO format itself are still work in progress.
-More information you can find in [OpenSCENARIO support](openscenario_support.md)
+Route mode always reloads the world, and `--agent` forces synchronous mode. Background traffic is spawned around the ego for the whole route. Route files live in `srunner/data/`:
 
-## Running scenarios using the OpenSCENARIO 2.0 format
+| File | Towns |
+|---|---|
+| `routes_town10.xml` | `Town10HD_Opt` |
+| `routes_devtest.xml`, `routes_training.xml`, `routes_validation.xml` | `Town12`, `Town13` |
 
-To run a scenario, which is based on the OpenSCENARIO 2.0 format, please run the ScenarioRunner as follows:
+Without `--route-id`, every route in the file runs in turn. See [Agent evaluation](agent_evaluation.md) for the agents and how to write one.
 
-```
-python scenario_runner.py --openscenario2 <path/to/osc-file>
-```
+---
+## Read the result
 
-To control the ego vehicle within the scenario or observe it, open another terminal and run:
+`--output` prints the actors, the simulation time and the criteria. `--file`, `--json` and `--junit` write the same result to disk in `--outputDir`, which a CI system can read.
 
-```
-python manual_control.py -a --rolename=ego_vehicle
-```
-
-For more information about how to run a OpenSCENARIO 2.0 scenario, please refer to [README_OpenSCENARIO_2.0](README_OpenSCENARIO_2.0.md).
-
-### Running scenarios using the OpenSCENARIO format with Global ParameterDeclaration overwrite
-
-```
-python scenario_runner.py --openscenario <path/to/xosc-file> --openscenarioparams 'param1: value1, param2: value2'
-```
-
-## Running route-based scenario (similar to the CARLA AD Challenge)
-
-To run a route-based scenario, please run the ScenarioRunner as follows:
-
-```
-python scenario_runner.py --route <path/to/route-file> <path/to/scenario_sample_file> [route id] --agent <path/to/agent_file>
+```text
+ > Criteria Information
+╒══════════════════════╤══════════════════════╤═════════╤══════════════╤═══════════════╕
+│ Actor                │ Criterion            │ Result  │ Actual Value │ Success Value │
+├──────────────────────┼──────────────────────┼─────────┼──────────────┼───────────────┤
+│ lincoln.mkz (id=366) │ CollisionTest (Req.) │ SUCCESS │ 0            │ 0             │
+├──────────────────────┼──────────────────────┼─────────┼──────────────┼───────────────┤
+│                      │ Timeout (Req.)       │ SUCCESS │ 29.38        │ 60            │
+├──────────────────────┼──────────────────────┼─────────┼──────────────┼───────────────┤
+│                      │ GLOBAL RESULT        │ SUCCESS │              │               │
+╘══════════════════════╧══════════════════════╧═════════╧══════════════╧═══════════════╛
 ```
 
-Example:
+The global result is `FAILURE` if a required criterion failed, `TIMEOUT` if the timeout fired and nothing failed, `ACCEPTABLE` if a criterion ended acceptable, and `SUCCESS` otherwise.
 
-```
-python scenario_runner.py /scenario_runner/srunner/routes_debug.xml /scenario_runner/srunner/data/all_towns_traffic_scenarios1_3_4.json 0 --agent srunner/autoagents/npc_agent.py
-```
+---
+## Useful options
 
-If no route id is provided, all routes within the given file will be executed.
+`python3 scenario_runner.py --help` prints them all; these are the ones that come up first.
 
-By doing so, ScenarioRunner will match the scenarios to the route, and they'll activate when the ego vehicle is nearby. However, routes need an autonomous agent to control the ego vehicle. Several examples are provided in srunner/autoagents/. For more information about agents, please have a look into the [agent documentation](agent_evaluation.md)
+| Option | Default | Effect |
+|---|---|---|
+| `--host`, `--port` | `127.0.0.1`, `2000` | CARLA server to connect to. |
+| `--timeout` | `120.0` | Client timeout in seconds. Raise it for large maps. |
+| `--sync` | off | Run in synchronous mode, which is what reproducible runs need. |
+| `--frameRate` | `20` | Tick rate in synchronous mode. |
+| `--reloadWorld` | off | Reload the world, loading the scenario's town. |
+| `--repetitions` | `1` | Run the scenario N times. |
+| `--output`, `--file`, `--json`, `--junit` | off | Where the results go. |
+| `--outputDir` | current directory | Directory for the result files. |
+| `--debug` | off | Print the behaviour tree, with every node's status, on each tick. |
+| `--record DIR` | | Record the run with the CARLA recorder and save the criteria, for the [metrics module](metrics_module.md). |
+| `--waitForEgo` | off | Attach to an ego someone else spawned instead of spawning one. |
+
+!!! note
+    An interrupted synchronous run leaves the server in synchronous mode, which makes the world look frozen to every other client. ScenarioRunner restores asynchronous mode when it exits normally; after a crash, set `synchronous_mode` back to `False` yourself.

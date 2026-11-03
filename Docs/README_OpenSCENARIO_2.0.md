@@ -107,15 +107,13 @@ sudo apt-get install graphviz
 
 **7 Configurate carla**
 
-1. Download [carla release](https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.13.tar.gz)
-
-2. Extract the carla installation package to a directory.
-
-On Ubuntu systems, the Carla environment variable is configured as follows:
+Install CARLA and set the environment as described in
+[Get ScenarioRunner](getting_scenariorunner.md):
 
 ```bash
-export CARLA_ROOT=/home/dut-aiid/CARLA_0.9.13
-export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.13-py3.7-linux-x86_64.egg:${CARLA_ROOT}/PythonAPI/carla/agents:${CARLA_ROOT}/PythonAPI/carla/agents/navigation:${CARLA_ROOT}/PythonAPI/carla:${CARLA_ROOT}/PythonAPI/examples:${CARLA_ROOT}/PythonAPI
+export CARLA_ROOT=/path/to/carla
+export SCENARIO_RUNNER_ROOT=/path/to/scenario_runner
+export PYTHONPATH=$SCENARIO_RUNNER_ROOT:$CARLA_ROOT/PythonAPI/carla:$PYTHONPATH
 ```
 
 ## Quickstart
@@ -124,10 +122,7 @@ export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.13-py
 
 Launch the CARLA simulation.
 
-```bash
-cd /home/xxx/CARLA_0.9.16
-./CarlaUE4.sh
-```
+Start a CARLA server, as described in the CARLA documentation.
 
 **2 Start manual_control**
 

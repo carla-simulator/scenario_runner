@@ -1,7 +1,7 @@
 site_name: CARLA ScenarioRunner
 repo_url: https://github.com/carla-simulator/scenario_runner
 docs_dir: Docs
-edit_uri: "edit/master/Docs/"
+edit_uri: "edit/ue58-dev/Docs/"
 theme: readthedocs
 extra_css: [extra.css]
 
@@ -11,6 +11,7 @@ nav:
       - Get ScenarioRunner: getting_scenariorunner.md
       - First steps: getting_started.md
       - Create a new scenario: creating_new_scenario.md
+      - Agent evaluation: agent_evaluation.md
       - Metrics module: metrics_module.md
       - FAQ: FAQ.md
       - Release Notes: CHANGELOG.md
@@ -18,6 +19,7 @@ nav:
       - List of scenarios: list_of_scenarios.md
       - OpenSCENARIO: openscenario_support.md
       - OpenSCENARIO2: README_OpenSCENARIO_2.0.md
+      - ROS agent: ros_agent.md
   - Contributing:
       - Code of conduct: CODE_OF_CONDUCT.md
       - Coding standard: coding_standard.md
