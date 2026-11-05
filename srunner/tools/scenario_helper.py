@@ -18,8 +18,8 @@ import numpy as np
 import carla
 from agents.tools.misc import vector
 from agents.navigation.local_planner import RoadOption
+from srunner.scenariomanager.simulation_data import SimulationData
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
 def get_value_parameter(config, name, p_type, default):
@@ -58,7 +58,7 @@ def get_distance_along_route(route, target_location):
     Note: If the location is not along the route, the route length will be returned
     """
 
-    wmap = CarlaDataProvider.get_map()
+    wmap = SimulationData.get_map()
     covered_distance = 0
     prev_position = None
     found = False
@@ -153,7 +153,7 @@ def get_crossing_point(actor):
 
     @return point of crossing
     """
-    wp_cross = CarlaDataProvider.get_map().get_waypoint(actor.get_location())
+    wp_cross = SimulationData.get_map().get_waypoint(actor.get_location())
 
     while not wp_cross.is_junction:
         wp_cross = wp_cross.next(2)[0]
@@ -171,7 +171,7 @@ def get_geometric_linear_intersection(ego_location, other_location, move_to_junc
     @return point of intersection of the two vehicles
     """
 
-    wp_ego_1 = CarlaDataProvider.get_map().get_waypoint(ego_location)
+    wp_ego_1 = SimulationData.get_map().get_waypoint(ego_location)
     wp_ego_2 = wp_ego_1.next(1)[0]
 
     if move_to_junction:
@@ -186,7 +186,7 @@ def get_geometric_linear_intersection(ego_location, other_location, move_to_junc
     ego_1_loc = wp_ego_1.transform.location
     ego_2_loc = wp_ego_2.transform.location
 
-    wp_other_1 = CarlaDataProvider.get_world().get_map().get_waypoint(other_location)
+    wp_other_1 = SimulationData.get_world().get_map().get_waypoint(other_location)
     wp_other_2 = wp_other_1.next(1)[0]
 
     if move_to_junction:
@@ -224,7 +224,7 @@ def get_location_in_distance(actor, distance):
 
     @return obtained location and the traveled distance
     """
-    waypoint = CarlaDataProvider.get_map().get_waypoint(actor.get_location())
+    waypoint = SimulationData.get_map().get_waypoint(actor.get_location())
     traveled_distance = 0
     while not waypoint.is_junction and traveled_distance < distance:
         waypoint_new = waypoint.next(1.0)[-1]
@@ -422,7 +422,7 @@ def generate_target_waypoint_in_route(waypoint, route):
     @returns a waypoint list according to turn input
     """
     target_waypoint = None
-    wmap = CarlaDataProvider.get_map()
+    wmap = SimulationData.get_map()
     reached_junction = False
 
     # Get the route location
@@ -490,8 +490,8 @@ def get_intersection(ego_actor, other_actor):
     Obtain a intersection point between two actor's location
     @return the intersection location
     """
-    waypoint = CarlaDataProvider.get_map().get_waypoint(ego_actor.get_location())
-    waypoint_other = CarlaDataProvider.get_map().get_waypoint(other_actor.get_location())
+    waypoint = SimulationData.get_map().get_waypoint(ego_actor.get_location())
+    waypoint_other = SimulationData.get_map().get_waypoint(other_actor.get_location())
     max_dist = float("inf")
     distance = float("inf")
     while distance <= max_dist:
@@ -522,7 +522,7 @@ def detect_lane_obstacle(actor, extension_factor=3, margin=1.02):
     """
     This function identifies if an obstacle is present in front of the reference actor
     """
-    world_actors = CarlaDataProvider.get_all_actors().filter('vehicle.*')
+    world_actors = SimulationData.get_world().get_actors().filter('vehicle.*')
     actor_bbox = actor.bounding_box
     actor_transform = actor.get_transform()
     actor_location = actor_transform.location
@@ -636,7 +636,7 @@ def get_closest_traffic_light(waypoint, traffic_lights=None):
     Checks all traffic lights part of 'traffic_lights', or all the town ones, if None are passed.
     """
     if not traffic_lights:
-        traffic_lights = CarlaDataProvider.get_all_actors().filter('*traffic_light*')
+        traffic_lights = SimulationData.get_world().get_actors().filter('*traffic_light*')
 
     closest_dist = float('inf')
     closest_tl = None
@@ -670,12 +670,12 @@ def get_troad_from_transform(actor_transform):
     This function finds the lateral road position (t) from actor_transform
     """
     actor_loc = actor_transform.location
-    c_wp = CarlaDataProvider.get_map().get_waypoint(actor_loc)
+    c_wp = SimulationData.get_map().get_waypoint(actor_loc)
     left_lanes, right_lanes = [], []
     # opendrive standard: (left ==> +ve lane_id) and (right ==> -ve lane_id)
-    ref_lane = CarlaDataProvider.get_map().get_waypoint_xodr(c_wp.road_id, 0, c_wp.s)
+    ref_lane = SimulationData.get_map().get_waypoint_xodr(c_wp.road_id, 0, c_wp.s)
     for i in range(-50, 50):
-        _wp = CarlaDataProvider.get_map().get_waypoint_xodr(c_wp.road_id, i, c_wp.s)
+        _wp = SimulationData.get_map().get_waypoint_xodr(c_wp.road_id, i, c_wp.s)
         if _wp:
             if i < 0:
                 left_lanes.append(_wp)
@@ -721,10 +721,10 @@ def get_distance_between_actors(current, target, distance_type="euclidianDistanc
     attributes
     """
 
-    target_transform = CarlaDataProvider.get_transform(target)
-    current_transform = CarlaDataProvider.get_transform(current)
-    target_wp = CarlaDataProvider.get_map().get_waypoint(target_transform.location)
-    current_wp = CarlaDataProvider.get_map().get_waypoint(current_transform.location)
+    target_transform = target.get_transform()
+    current_transform = current.get_transform()
+    target_wp = SimulationData.get_map().get_waypoint(target_transform.location)
+    current_wp = SimulationData.get_map().get_waypoint(current_transform.location)
 
     extent_sum_x, extent_sum_y = 0, 0
     if freespace:
@@ -859,3 +859,119 @@ class RotatedRectangle(object):
         Obtain a intersection point between two contour.
         """
         return self.get_contour().intersection(other.get_contour())
+
+
+def check_road_length(wp, length):
+    # type: (carla.Waypoint, float) -> bool
+    """
+    Checks wether the road starting at the given waypoint is at least the given length long.
+
+    This is done by querying waypoints in 5m steps checking their road_id and lane_id.
+    """
+    waypoint_separation = 5
+
+    cur_len = 0
+    road_id, lane_id = wp.road_id, wp.lane_id
+    while True:
+        wps = wp.next(waypoint_separation)
+        # The same roadid and laneid，judged to be in the same section to be tested
+        next_wp = None
+        for p in wps:
+            if p.road_id == road_id and p.lane_id == lane_id:
+                next_wp = p
+                break
+        if next_wp is None:
+            break
+        cur_len += waypoint_separation
+        if cur_len >= length:
+            return True
+        wp = next_wp
+    return False
+
+
+def get_road_lanes(wp):
+    # type: (carla.Waypoint) -> list[carla.Waypoint]
+    """
+    This function takes a waypoint and returns a list of waypoints representing
+    all the parallel driving lanes from the leftmost to the rightmost lane.
+
+    Args:
+        wp (carla.Waypoint): The starting waypoint.
+
+    Returns:
+        list[carla.Waypoint]: A list of waypoints representing all driving lanes.
+    """
+    if wp.is_junction:
+        return []
+    # find the most left lane's waypoint
+
+    lane_id_set = set()
+    pre_left = wp
+    while wp and wp.lane_type == carla.LaneType.Driving:
+        if wp.lane_id in lane_id_set:
+            break
+        lane_id_set.add(wp.lane_id)
+
+        # carla bug: get_left_lane returns error，and never returns none. It's a infinite loop.
+        pre_left = wp
+        wp = wp.get_left_lane()
+
+    # # Store data from the left lane to the right lane
+    # # list<key, value>, key=laneid, value=waypoint
+    lane_list = []
+    lane_id_set.clear()
+    wp = pre_left
+    while wp and wp.lane_type == carla.LaneType.Driving:
+        if wp.lane_id in lane_id_set:
+            break
+        lane_id_set.add(wp.lane_id)
+
+        lane_list.append(wp)
+
+        # carla bug: returns error, never return none, endless loop
+        wp = wp.get_right_lane()
+
+    return lane_list
+
+
+def get_road_lane_cnt(wp):
+    """
+    Counts the number of parallel driving lanes at the given waypoint.
+    """
+    return len(get_road_lanes(wp))
+
+
+def get_waypoint_by_laneid(lane_num):
+    # type: (int) -> carla.Waypoint | None
+    """
+    Selects an unused spawn point und by using `get_road_lanes` returns a parallel waypoint.
+
+    Args:
+        lane_num (int): The lane number to select, 1 is the leftmost lane.
+            Use 0 and negative to count from the rightmost lane.
+
+    Returns:
+        carla.Waypoint | None: The selected waypoint. None if no more spawn points are available
+            or if `lane_num``is higher than the number of lanes.
+    """
+    lane = int(float(lane_num))
+    index = lane - 1
+
+    # Advance until a spawn point whose road offers the requested lane:
+    # spawn point ordering is map-specific and the first candidates can sit
+    # inside junctions (where no parallel lane layout can be derived) or on
+    # roads with fewer lanes.
+    while True:
+        pos = SimulationData.next_spawn_point()
+        if pos is None:
+            break
+        wp = SimulationData.get_map().get_waypoint(
+            pos.location, project_to_road=True, lane_type=carla.LaneType.Driving
+        )
+
+        road_lanes = get_road_lanes(wp)
+        if -len(road_lanes) <= index < len(road_lanes):
+            return road_lanes[index]
+
+    print("No more spawn points to use")
+    return None

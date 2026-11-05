@@ -1,7 +1,5 @@
-
 import carla
 
-import srunner.scenariomanager.carla_data_provider as carla_data
 from srunner.osc2_dm.physical_types import Physical
 from srunner.osc2_stdlib.path_check import (
     OverJunctionCheck,
@@ -13,6 +11,8 @@ from srunner.osc2_stdlib.path_check import (
     PathOverDiffLimitMarks,
     PathTrafficSign,
 )
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.scenario_helper import check_road_length, get_road_lanes
 
 
 class Path:
@@ -118,13 +118,13 @@ class Path:
 
     @classmethod
     def check(cls, pos) -> bool:
-        _map = carla_data.CarlaDataProvider.get_map(carla_data.CarlaDataProvider.world)
+        _map = SimulationData.get_map()
         wp = _map.get_waypoint(
             pos.location, project_to_road=True, lane_type=carla.LaneType.Driving
         )
         # Remove the intersection
 
-        road_lanes = carla_data.CarlaDataProvider.get_road_lanes(wp)
+        road_lanes = get_road_lanes(wp)
         lane_cnt = len(road_lanes)
 
         # Check whether the number of lanes is satisfied
@@ -135,7 +135,7 @@ class Path:
 
         # Check whether the length of the test road meets the constraints
         if cls._length:
-            len_ok = carla_data.CarlaDataProvider.check_road_length(wp, cls._length)
+            len_ok = check_road_length(wp, cls._length)
             if not len_ok:
                 return False
 

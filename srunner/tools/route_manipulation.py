@@ -15,8 +15,8 @@ import xml.etree.ElementTree as ET
 
 from agents.navigation.global_route_planner import GlobalRoutePlanner
 from agents.navigation.local_planner import RoadOption
+from srunner.scenariomanager.simulation_data import SimulationData
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
 def _location_to_gps(lat_ref, lon_ref, location):
@@ -140,9 +140,9 @@ def interpolate_trajectory(waypoints_trajectory, hop_resolution=1.0):
         - hop_resolution: distance between the trajectory's waypoints
     """
 
-    grp = GlobalRoutePlanner(CarlaDataProvider.get_map(), hop_resolution)
+    grp = GlobalRoutePlanner(SimulationData.get_map(), hop_resolution)
     # Obtain route plan
-    lat_ref, lon_ref = _get_latlon_ref(CarlaDataProvider.get_world())
+    lat_ref, lon_ref = _get_latlon_ref(SimulationData.get_world())
 
     route = []
     gps_route = []

@@ -17,7 +17,6 @@ import math  # pylint: disable=wrong-import-order
 import py_trees
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       ActorSource,
@@ -28,6 +27,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import Dr
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
 from srunner.tools.blackboard import set_blackboard
+from srunner.tools.actor_factory import request_new_actor
 
 
 class ManeuverOppositeDirection(BasicScenario):
@@ -38,21 +38,18 @@ class ManeuverOppositeDirection(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  obstacle_type='barrier', timeout=120):
         """
         Setup all relevant parameters and create scenario
         obstacle_type -> flag to select type of leading obstacle. Values: vehicle, barrier
         """
-        self._world = world
-        self._map = CarlaDataProvider.get_map()
         self._first_vehicle_location = 50
         self._second_vehicle_location = self._first_vehicle_location + 60
         self._ego_vehicle_drive_distance = self._second_vehicle_location * 2
         self._start_distance = self._first_vehicle_location * 0.9
         self._opposite_speed = 5.56   # m/s
         self._source_gap = 40   # m
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._source_transform = None
         self._sink_location = None
         self._blackboard_queue_name = 'ManeuverOppositeDirection/actor_flow_queue'
@@ -68,7 +65,6 @@ class ManeuverOppositeDirection(BasicScenario):
             "ManeuverOppositeDirection",
             ego_vehicles,
             config,
-            world,
             debug_mode,
             criteria_enable=criteria_enable)
 
@@ -95,11 +91,11 @@ class ManeuverOppositeDirection(BasicScenario):
                 0.50 * second_prop_waypoint.lane_width * math.sin(math.radians(position_yaw)))
             second_prop_transform = carla.Transform(
                 second_prop_waypoint.transform.location + offset_location, first_actor_transform.rotation)
-            second_prop_actor = CarlaDataProvider.request_new_actor(first_actor_model, second_prop_transform)
+            second_prop_actor = request_new_actor(first_actor_model, second_prop_transform)
             second_prop_actor.set_simulate_physics(True)
-        first_actor = CarlaDataProvider.request_new_actor(first_actor_model, first_actor_transform)
+        first_actor = request_new_actor(first_actor_model, first_actor_transform)
         first_actor.set_simulate_physics(True)
-        second_actor = CarlaDataProvider.request_new_actor('vehicle.audi.tt', second_actor_waypoint.transform)
+        second_actor = request_new_actor('vehicle.audi.tt', second_actor_waypoint.transform)
 
         self.other_actors.append(first_actor)
         self.other_actors.append(second_actor)

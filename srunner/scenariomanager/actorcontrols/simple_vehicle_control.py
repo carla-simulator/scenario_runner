@@ -20,9 +20,9 @@ import carla
 
 from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
 from srunner.scenariomanager.actorcontrols.visualizer import Visualizer
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.timer import GameTime
 from srunner.tools.util import strtobool
+from srunner.scenariomanager.simulation_data import SimulationData
 
 
 class SimpleVehicleControl(BasicControl):
@@ -107,14 +107,14 @@ class SimpleVehicleControl(BasicControl):
 
         if args and 'consider_obstacles' in args and strtobool(args['consider_obstacles']):
             self._consider_obstacles = strtobool(args['consider_obstacles'])
-            bp = CarlaDataProvider.get_world().get_blueprint_library().find('sensor.other.obstacle')
+            bp = SimulationData.get_world().get_blueprint_library().find('sensor.other.obstacle')
             bp.set_attribute('distance', '250')
             if args and 'proximity_threshold' in args:
                 self._proximity_threshold = float(args['proximity_threshold'])
                 bp.set_attribute('distance', str(max(float(args['proximity_threshold']), 250)))
             bp.set_attribute('hit_radius', '1')
             bp.set_attribute('only_dynamics', 'True')
-            self._obstacle_sensor = CarlaDataProvider.get_world().spawn_actor(
+            self._obstacle_sensor = SimulationData.get_world().spawn_actor(
                 bp,
                 carla.Transform(
                     carla.Location(x=self._actor.bounding_box.extent.x, z=1.0)
@@ -195,9 +195,9 @@ class SimpleVehicleControl(BasicControl):
 
             map_wp = None
             if not self._generated_waypoint_list:
-                map_wp = CarlaDataProvider.get_map().get_waypoint(CarlaDataProvider.get_location(self._actor))
+                map_wp = SimulationData.get_map().get_waypoint(self._actor.get_location())
             else:
-                map_wp = CarlaDataProvider.get_map().get_waypoint(self._generated_waypoint_list[-1].location)
+                map_wp = SimulationData.get_map().get_waypoint(self._generated_waypoint_list[-1].location)
             while len(self._generated_waypoint_list) < 50:
                 map_wps = map_wp.next(2.0)
                 if map_wps:
@@ -321,7 +321,7 @@ class SimpleVehicleControl(BasicControl):
 
         # set new linear velocity
         velocity = carla.Vector3D(0, 0, 0)
-        direction = next_location - CarlaDataProvider.get_location(self._actor)
+        direction = next_location - self._actor.get_location()
         direction_norm = math.sqrt(direction.x**2 + direction.y**2)
         velocity.x = direction.x / direction_norm * target_speed
         velocity.y = direction.y / direction_norm * target_speed
@@ -329,13 +329,13 @@ class SimpleVehicleControl(BasicControl):
         self._actor.set_target_velocity(velocity)
 
         # set new angular velocity
-        current_yaw = CarlaDataProvider.get_transform(self._actor).rotation.yaw
+        current_yaw = self._actor.get_transform().rotation.yaw
         # When we have a waypoint list, use the direction between the waypoints to calculate the heading (change)
         # otherwise use the waypoint heading directly
         if self._waypoints:
             delta_yaw = math.degrees(math.atan2(direction.y, direction.x)) - current_yaw
         else:
-            new_yaw = CarlaDataProvider.get_map().get_waypoint(next_location).transform.rotation.yaw
+            new_yaw = SimulationData.get_map().get_waypoint(next_location).transform.rotation.yaw
             delta_yaw = new_yaw - current_yaw
 
         if math.fabs(delta_yaw) > 360:

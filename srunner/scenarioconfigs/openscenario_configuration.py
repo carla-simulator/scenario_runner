@@ -20,8 +20,9 @@ import carla
 # pylint: disable=line-too-long
 from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData, ScenarioConfiguration
 # pylint: enable=line-too-long
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider  # workaround
 from srunner.tools.openscenario_parser import OpenScenarioParser, ParameterRef
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.map_utils import resolve_map_name
 
 
 class OpenScenarioConfiguration(ScenarioConfiguration):
@@ -177,7 +178,7 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
             wmap = world.get_map()
 
         if self.town and ".xodr" not in self.town:
-            self.town = CarlaDataProvider.resolve_map_name(self.town, self.client)
+            self.town = resolve_map_name(self.client, self.town)
 
         if world is None or (wmap is not None and wmap.name.split('/')[-1] != self.town):
             if ".xodr" in self.town:
@@ -212,13 +213,10 @@ class OpenScenarioConfiguration(ScenarioConfiguration):
                     continue
                 world = self.client.get_world()
 
-            CarlaDataProvider.set_world(world)
-            if CarlaDataProvider.is_sync_mode():
-                world.tick()
-            else:
-                world.wait_for_tick()
+            SimulationData.prepare_world(world)
+            SimulationData.tick_world()
         else:
-            CarlaDataProvider.set_world(world)
+            SimulationData.prepare_world(world)
 
     def _set_parameters(self):
         """

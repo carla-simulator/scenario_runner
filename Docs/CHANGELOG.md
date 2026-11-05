@@ -19,8 +19,10 @@
 * Resolved requested towns against the maps available on the server (CARLA UE5 requires exact names, e.g. Town01 -> Town01_Opt) and translated legacy 0.9.x blueprint ids to their UE5 equivalents.
 * Made OpenSCENARIO 2.0 support optional: every other mode works without the antlr4 runtime installed.
 * Regenerated the OpenSCENARIO 2.0 parser with ANTLR 4.9.3 (the `sum` grammar rule became `sumExpression`, as 4.9.3 reserves the name): the required antlr4-python3-runtime now matches the 4.9.* pin of common packages such as omegaconf, so both can share an environment.
-* `CarlaDataProvider.get_waypoint_by_laneid` now advances through the spawn points until one offers the requested lane instead of failing on the first candidate, whose road can sit inside a junction depending on the map's spawn point ordering.
-* Routes authored for leaderboard-2.1 no longer skip `ConstructionObstacle`, `ConstructionObstacleTwoWays` and `ParkingExit`: when a route lacks the `start_actor_flow` parameter these scenarios now require, RouteScenario falls back to their leaderboard-2.1 definitions (see `legacy_route_scenarios.py`).
+* **Split `CarlaDataProvider` into smaller pieces.** `SimulationData` (`srunner/scenariomanager/simulation_data.py`) keeps only the client, world, map, route planner, spawn points and random state; spawning moved to `srunner/tools/actor_factory.py`, actor helpers to `actor_state.py`, and the traffic light, map and OpenSCENARIO helpers to their own modules. Update any import of `srunner.scenariomanager.carla_data_provider`.
+* **Actor state is no longer cached each tick.** Read it from the Python API: `actor.get_location()` and `actor.get_transform()` instead of the provider, and `get_ground_speed(actor)` for the 2D speed. Every actor is now destroyed by whoever created it, so the global actor pool is gone too.
+* **Scenarios no longer take `world`.** It comes from `SimulationData`, as do the map and the global route planner, which `BasicScenario` now provides.
+* `ConstructionObstacle`, `ConstructionObstacleTwoWays` and `ParkingExit` take their traffic from the config: they run an actor flow when given `start_actor_flow` and `end_actor_flow`, and slow the background traffic down when not.
 
 ## CARLA ScenarioRunner 0.9.16
 

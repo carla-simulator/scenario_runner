@@ -13,7 +13,6 @@ priority, e.g. by running a red traffic light.
 import py_trees
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
@@ -31,6 +30,7 @@ from srunner.tools.background_manager import (
     StopBackVehicles,
     StartBackVehicles,
 )
+from srunner.tools.actor_factory import request_new_actor
 
 
 def get_value_parameter(config, name, p_type, default):
@@ -55,14 +55,12 @@ class VehicleOpensDoorTwoWays(BasicScenario):
     This class holds everything required for a scenario in which another vehicle parked at the side lane
     opens the door, forcing the ego to lane change, invading the opposite lane
     """
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        self._world = world
-        self._map = CarlaDataProvider.get_map()
 
         self.timeout = timeout
         self._min_trigger_dist = 10
@@ -85,7 +83,6 @@ class VehicleOpensDoorTwoWays(BasicScenario):
             "VehicleOpensDoorTwoWays",
             ego_vehicles,
             config,
-            world,
             debug_mode,
             criteria_enable=criteria_enable,
         )
@@ -140,7 +137,7 @@ class VehicleOpensDoorTwoWays(BasicScenario):
 
         self.parking_slots.append(self._parked_wp.transform.location)
 
-        self._parked_actor = CarlaDataProvider.request_new_actor(
+        self._parked_actor = request_new_actor(
             "*vehicle.*", self._parked_wp.transform, attribute_filter={'has_dynamic_doors': True, 'base_type': 'car'})
         if not self._parked_actor:
             raise ValueError("Couldn't spawn the parked vehicle")

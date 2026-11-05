@@ -15,7 +15,6 @@ import os
 import py_trees
 import py_trees.decorators
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
     ChangeWeather,
     ChangeRoadFriction,
@@ -30,6 +29,7 @@ from srunner.scenariomanager.weather_sim import OSCWeatherBehavior
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.openscenario_parser import OpenScenarioParser, oneshot_with_check, ParameterRef
 from srunner.tools.blackboard import get_blackboard_keys
+from srunner.tools.actor_factory import request_new_actors
 
 
 def repeatable_behavior(behaviour, name=None):
@@ -182,7 +182,7 @@ class OpenScenario(BasicScenario):
     Implementation of the OpenSCENARIO scenario
     """
 
-    def __init__(self, world, ego_vehicles, config, config_file, debug_mode=False, criteria_enable=True, timeout=300):
+    def __init__(self, ego_vehicles, config, config_file, debug_mode=False, criteria_enable=True, timeout=300):
         """
         Setup all relevant parameters and create scenario
         """
@@ -193,8 +193,8 @@ class OpenScenario(BasicScenario):
         self.timeout = timeout
 
         super().__init__(self.config.name, ego_vehicles=ego_vehicles, config=config,
-                                           world=world, debug_mode=debug_mode,
-                                           terminate_on_failure=False, criteria_enable=criteria_enable)
+                         debug_mode=debug_mode, terminate_on_failure=False,
+                         criteria_enable=criteria_enable)
 
     def _initialize_parameters(self):
         """
@@ -222,7 +222,7 @@ class OpenScenario(BasicScenario):
 
         return param_behavior
 
-    def _initialize_environment(self, world):
+    def _initialize_environment(self):
         """
         Initialization of weather and road friction.
         """
@@ -611,7 +611,7 @@ class OpenScenario(BasicScenario):
                             if actor.rolename == entity_ref:
                                 config.other_actors.remove(actor)
 
-            new_actors = CarlaDataProvider.request_new_actors(config.other_actors)
+            new_actors = request_new_actors(config.other_actors)
             if not new_actors:
                 raise Exception("Error: Unable to add actors")
             for new_actor in new_actors:

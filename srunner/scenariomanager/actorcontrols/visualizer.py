@@ -19,8 +19,8 @@ import cv2
 import numpy as np
 
 import carla
+from srunner.scenariomanager.simulation_data import SimulationData
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
 class Visualizer(object):
@@ -60,18 +60,18 @@ class Visualizer(object):
         self._camera_bird = None
         self._camera_actor = None
 
-        bp = CarlaDataProvider.get_world().get_blueprint_library().find('sensor.camera.rgb')
+        bp = SimulationData.get_world().get_blueprint_library().find('sensor.camera.rgb')
         bp.set_attribute('image_size_x', '1000')
         bp.set_attribute('image_size_y', '400')
-        self._camera_bird = CarlaDataProvider.get_world().spawn_actor(bp, carla.Transform(
+        self._camera_bird = SimulationData.get_world().spawn_actor(bp, carla.Transform(
             carla.Location(x=20.0, z=50.0), carla.Rotation(pitch=-90, yaw=-90)), attach_to=self._actor)
         self._camera_bird.listen(lambda image: self._on_camera_update(
             image, birdseye=True))  # pylint: disable=unnecessary-lambda
 
-        bp = CarlaDataProvider.get_world().get_blueprint_library().find('sensor.camera.rgb')
+        bp = SimulationData.get_world().get_blueprint_library().find('sensor.camera.rgb')
         bp.set_attribute('image_size_x', '1000')
         bp.set_attribute('image_size_y', '400')
-        self._camera_actor = CarlaDataProvider.get_world().spawn_actor(bp, carla.Transform(
+        self._camera_actor = SimulationData.get_world().spawn_actor(bp, carla.Transform(
             carla.Location(x=2.3, z=1.0)), attach_to=self._actor)
         self._camera_actor.listen(lambda image: self._on_camera_update(
             image, birdseye=False))  # pylint: disable=unnecessary-lambda

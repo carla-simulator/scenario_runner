@@ -13,10 +13,10 @@ import py_trees
 
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import TrafficLightFreezer
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection
 from srunner.scenarios.basic_scenario import BasicScenario
+from srunner.scenariomanager.simulation_data import SimulationData
 
 
 class PriorityAtJunction(BasicScenario):
@@ -27,20 +27,17 @@ class PriorityAtJunction(BasicScenario):
 
     timeout = 80  # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
         """
         Setup all relevant parameters and create scenario
         """
-        self._world = world
-        self._map = CarlaDataProvider.get_map()
         self._tl_dict = {}
 
         self.timeout = timeout
         super().__init__("PriorityAtJunction",
                          ego_vehicles,
                          config,
-                         world,
                          debug_mode,
                          criteria_enable=criteria_enable)
 
@@ -49,7 +46,7 @@ class PriorityAtJunction(BasicScenario):
         Get the junction and traffic lights
         """
         ego_location = config.trigger_points[0].location
-        self._ego_wp = CarlaDataProvider.get_map().get_waypoint(ego_location)
+        self._ego_wp = SimulationData.get_map().get_waypoint(ego_location)
 
         # Get the junction
         starting_wp = self._ego_wp
