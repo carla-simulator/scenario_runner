@@ -16,9 +16,9 @@ import time
 import py_trees
 
 from srunner.autoagents.agent_wrapper import AgentWrapper
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.result_writer import ResultOutputProvider
 from srunner.scenariomanager.timer import GameTime
+from srunner.scenariomanager.simulation_data import SimulationData
 # from srunner.scenariomanager.watchdog import Watchdog
 
 
@@ -91,8 +91,6 @@ class ScenarioManager(object):
             self._agent.cleanup()
             self._agent = None
 
-        CarlaDataProvider.cleanup()
-
     def load_scenario(self, scenario, agent=None):
         """
         Load a new scenario
@@ -126,7 +124,7 @@ class ScenarioManager(object):
 
         while self._running:
             timestamp = None
-            world = CarlaDataProvider.get_world()
+            world = SimulationData.get_world()
             if world:
                 snapshot = world.get_snapshot()
                 if snapshot:
@@ -162,7 +160,6 @@ class ScenarioManager(object):
 
             # Update game time and actor information
             GameTime.on_carla_tick(timestamp)
-            CarlaDataProvider.on_carla_tick()
 
             if self._agent is not None:
                 ego_action = self._agent()  # pylint: disable=not-callable
@@ -183,7 +180,7 @@ class ScenarioManager(object):
 
         # if self._sync_mode and self._running and self._watchdog.get_status():
         if self._sync_mode and self._running:
-            CarlaDataProvider.get_world().tick()
+            SimulationData.get_world().tick()
 
     def get_running_status(self):
         """

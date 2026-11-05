@@ -13,8 +13,9 @@ from unittest import TestCase
 import glob
 import carla
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenarios.open_scenario import OpenScenario
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.actor_factory import request_new_actor
 
 
 class TestLoadingXOSC(TestCase):
@@ -32,10 +33,10 @@ class TestLoadingXOSC(TestCase):
             client = carla.Client()
             config = OpenScenarioConfiguration(filename, client, {})
             self.assertTrue(config is not None)
-            CarlaDataProvider.set_client(client)
+            SimulationData.set_client(client)
             ego_vehicles = []
             for vehicle in config.ego_vehicles:
-                ego_vehicles.append(CarlaDataProvider.request_new_actor(vehicle.model,
+                ego_vehicles.append(request_new_actor(vehicle.model,
                                                                         vehicle.transform,
                                                                         vehicle.rolename,
                                                                         color=vehicle.color,
@@ -48,4 +49,4 @@ class TestLoadingXOSC(TestCase):
                                     timeout=100000)
             self.assertTrue(scenario is not None)
 
-            CarlaDataProvider.cleanup()
+            SimulationData.cleanup()

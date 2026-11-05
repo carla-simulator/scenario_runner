@@ -13,7 +13,6 @@ import py_trees
 
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, TrafficLightFreezer, ScenarioTimeout
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection, DriveDistance
@@ -27,6 +26,7 @@ from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_interval_parameter)
 
 from srunner.tools.background_manager import HandleJunctionScenario
+from srunner.scenariomanager.simulation_data import SimulationData
 
 
 class JunctionRightTurn(BasicScenario):
@@ -35,13 +35,11 @@ class JunctionRightTurn(BasicScenario):
     colliding with vehicles coming from its left
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
         """
         Setup all relevant parameters and create scenario
         """
-        self._world = world
-        self._map = CarlaDataProvider.get_map()
         self.timeout = timeout
 
         self._direction = 'left'
@@ -63,7 +61,6 @@ class JunctionRightTurn(BasicScenario):
         super().__init__("JunctionRightTurn",
                          ego_vehicles,
                          config,
-                         world,
                          debug_mode,
                          criteria_enable=criteria_enable)
 
@@ -72,7 +69,7 @@ class JunctionRightTurn(BasicScenario):
         Custom initialization
         """
         ego_location = config.trigger_points[0].location
-        self._ego_wp = CarlaDataProvider.get_map().get_waypoint(ego_location)
+        self._ego_wp = SimulationData.get_map().get_waypoint(ego_location)
 
         # Get the junction
         starting_wp = self._ego_wp
@@ -146,9 +143,9 @@ class SignalizedJunctionRightTurn(JunctionRightTurn):
     Signalized version of JunctionRightTurn
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
-        super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
+        super().__init__(ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _initialize_actors(self, config):
         """
@@ -211,9 +208,9 @@ class NonSignalizedJunctionRightTurn(JunctionRightTurn):
     Non signalized version of JunctionRightTurn
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
-        super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
+        super().__init__(ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _create_behavior(self):
         """

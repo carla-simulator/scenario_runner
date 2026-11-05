@@ -12,7 +12,6 @@ Scenario in which the ego is parked between two vehicles and has to maneuver to 
 import py_trees
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorFlow,
                                                                       ActorDestroy,
                                                                       ActorTransformSetter,
@@ -25,9 +24,12 @@ from srunner.scenarios.basic_scenario import BasicScenario
 
 from srunner.tools.background_manager import ChangeRoadBehavior
 from srunner.tools.scenario_helper import convert_dict_to_location, get_value_parameter
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.actor_factory import request_new_actor
+from srunner.tools.actor_state import destroy_actor
 
 
-class ParkingExitRoute(BasicScenario):
+class ParkingExit(BasicScenario):
     """
     This class holds everything required for a scenario in which the ego would be teleported to the parking lane.
     Once the scenario is triggered, the OutsideRouteLanesTest will be deactivated since the ego is out of the
@@ -45,16 +47,14 @@ class ParkingExitRoute(BasicScenario):
         Make sure there are enough space for spawning blocking vehicles.
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
         """
         Setup all relevant parameters and create scenario
         and instantiate scenario manager
         """
-        self._world = world
-        self._map = CarlaDataProvider.get_map()
-        self._tm = CarlaDataProvider.get_client().get_trafficmanager(
-            CarlaDataProvider.get_traffic_manager_port())
+        self._tm = SimulationData.get_client().get_trafficmanager(
+            SimulationData.get_traffic_manager_port())
         self.timeout = timeout
 
         self._bp_attributes = {'base_type': 'car', 'generation': 3}
@@ -68,6 +68,15 @@ class ParkingExitRoute(BasicScenario):
 
         self._flow_distance = get_value_parameter(config, 'flow_distance', float, 25)
         self._max_speed = get_value_parameter(config, 'speed', float, 60)
+
+        # A config that places the traffic itself gets the actor flow behaviour. Without
+        # those two points there is nothing to merge into, so the background provides it
+        self._actor_flow = 'start_actor_flow' in config.other_parameters \
+            and 'end_actor_flow' in config.other_parameters
+        if self._actor_flow:
+            self._start_actor_flow = convert_dict_to_location(config.other_parameters['start_actor_flow'])
+            self._end_actor_flow = convert_dict_to_location(config.other_parameters['end_actor_flow'])
+            self._flow_speed = get_value_parameter(config, 'speed', float, 7)
 
         self._scenario_timeout = 240
 
@@ -88,7 +97,6 @@ class ParkingExitRoute(BasicScenario):
         super().__init__("ParkingExit",
                          ego_vehicles,
                          config,
-                         world,
                          debug_mode,
                          criteria_enable=criteria_enable)
 
@@ -105,7 +113,7 @@ class ParkingExitRoute(BasicScenario):
 
         self.parking_slots.append(front_points[0].transform.location)
 
-        actor_front = CarlaDataProvider.request_new_actor(
+        actor_front = request_new_actor(
             'vehicle.*', front_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
         if actor_front is None:
             raise ValueError("Couldn't spawn the vehicle in front of the parking point")
@@ -124,14 +132,14 @@ class ParkingExitRoute(BasicScenario):
 
         self.parking_slots.append(behind_points[0].transform.location)
 
-        actor_behind = CarlaDataProvider.request_new_actor(
+        actor_behind = request_new_actor(
             "vehicle.*",
             behind_points[0].transform,
             rolename="scenario no lights",
             attribute_filter=self._bp_attributes,
         )
         if actor_behind is None:
-            CarlaDataProvider.remove_actor_by_id(actor_front.id)
+            destroy_actor(actor_front)
             raise ValueError("Couldn't spawn the vehicle behind the parking point")
         actor_behind.apply_control(carla.VehicleControl(hand_brake=True))
         self.other_actors.append(actor_behind)
@@ -145,8 +153,11 @@ class ParkingExitRoute(BasicScenario):
         self.parking_slots.append(self._ego_location)
         self.ego_vehicles[0].set_location(self._ego_location)
 
-        # Spawn the actor at the side of the ego
-        actor_side = CarlaDataProvider.request_new_actor(
+        if self._actor_flow:
+            return
+
+        # Spawn the actor at the side of the ego, which the flow replaces when there is one
+        actor_side = request_new_actor(
             'vehicle.*', self._reference_waypoint.transform, attribute_filter=self._bp_attributes)
         if actor_side is None:
             raise ValueError("Couldn't spawn the vehicle at the side of the parking point")
@@ -179,6 +190,9 @@ class ParkingExitRoute(BasicScenario):
         After ego drives away, activate OutsideRouteLanesTest, end scenario.
         """
 
+        if self._actor_flow:
+            return self._create_actor_flow_behavior()
+
         sequence = py_trees.composites.Sequence(name="ParkingExit", memory=True)
         sequence.add_child(ChangeRoadBehavior(spawn_dist=self._flow_distance))
         root = py_trees.composites.Parallel(policy=py_trees.common.ParallelPolicy.SuccessOnOne(), name="Root")
@@ -203,88 +217,8 @@ class ParkingExitRoute(BasicScenario):
 
         return sequence
 
-    def _create_test_criteria(self):
-        """
-        A list of all test criteria will be created that is later used
-        in parallel behavior tree.
-        """
-        return [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
-
-    def __del__(self):
-        """
-        Remove all actors and traffic lights upon deletion
-        """
-        self.remove_all_actors()
-
-
-class ParkingExit(ParkingExitRoute):
-    """
-    Stnadalone version of the scenario
-    """
-
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
-                 timeout=180):
-        """
-        Setup all relevant parameters and create scenario
-        and instantiate scenario manager
-        """
-        self._start_actor_flow = convert_dict_to_location(config.other_parameters['start_actor_flow'])
-        self._end_actor_flow = convert_dict_to_location(config.other_parameters['end_actor_flow'])
-        self._flow_speed = get_value_parameter(config, 'speed', float, 7)
-
-        super().__init__(
-            world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
-
-    def _initialize_actors(self, config):
-        """
-        Custom initialization
-        """
-        # Spawn the actor in front of the ego
-        front_points = self._parking_waypoint.next(
-            self._front_vehicle_distance)
-        if not front_points:
-            raise ValueError("Couldn't find viable position for the vehicle in front of the parking point")
-
-        actor_front = CarlaDataProvider.request_new_actor(
-            'vehicle.*', front_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
-        if actor_front is None:
-            raise ValueError("Couldn't spawn the vehicle in front of the parking point")
-        actor_front.apply_control(carla.VehicleControl(hand_brake=True))
-        self.other_actors.append(actor_front)
-
-        # And move it to the side
-        side_location = self._get_displaced_location(actor_front, front_points[0])
-        actor_front.set_location(side_location)
-
-        # Spawn the actor behind the ego
-        behind_points = self._parking_waypoint.previous(
-            self._behind_vehicle_distance)
-        if not behind_points:
-            raise ValueError("Couldn't find viable position for the vehicle behind the parking point")
-
-        actor_behind = CarlaDataProvider.request_new_actor(
-            'vehicle.*', behind_points[0].transform, rolename='scenario no lights', attribute_filter=self._bp_attributes)
-        if actor_behind is None:
-            actor_front.destroy()
-            raise ValueError("Couldn't spawn the vehicle behind the parking point")
-        actor_behind.apply_control(carla.VehicleControl(hand_brake=True))
-        self.other_actors.append(actor_behind)
-
-        # And move it to the side
-        side_location = self._get_displaced_location(actor_behind, behind_points[0])
-        actor_behind.set_location(side_location)
-
-        # Move the ego to its side position
-        self._ego_location = self._get_displaced_location(self.ego_vehicles[0], self._parking_waypoint)
-        self.ego_vehicles[0].set_location(self._ego_location)
-
-    def _create_behavior(self):
-        """
-        Deactivate OutsideRouteLanesTest, then move ego to the parking point,
-        generate blocking vehicles in front of and behind the ego.
-        After ego drives away, activate OutsideRouteLanesTest, end scenario.
-        """
-        
+    def _create_actor_flow_behavior(self):
+        """The traffic the ego merges into runs between the two points the config gives"""
         source_wp = self._map.get_waypoint(self._start_actor_flow)
         sink_wp = self._map.get_waypoint(self._end_actor_flow)
 
@@ -304,14 +238,19 @@ class ParkingExit(ParkingExitRoute):
         return sequence
 
     def _setup_scenario_trigger(self, config):
-        return None
+        """A config that brings its own flow starts the scenario straight away"""
+        if self._actor_flow:
+            return None
+        return super()._setup_scenario_trigger(config)
 
     def _create_test_criteria(self):
         """
         A list of all test criteria will be created that is later used
         in parallel behavior tree.
         """
-        return [CollisionTest(self.ego_vehicles[0])]
+        if self._actor_flow:
+            return [CollisionTest(self.ego_vehicles[0])]
+        return [ScenarioTimeoutTest(self.ego_vehicles[0], self.config.name)]
 
     def __del__(self):
         """

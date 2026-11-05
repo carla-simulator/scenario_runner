@@ -25,7 +25,8 @@ In `LeadBrakes` a car drives ahead of the ego, brakes to a stop, and the scenari
 ```py
 import py_trees
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.actor_factory import request_new_actor
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorDestroy,
                                                                       StopVehicle,
                                                                       WaypointFollower)
@@ -43,7 +44,7 @@ class LeadBrakes(BasicScenario):
     def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False,
                  criteria_enable=True, timeout=60):
         self.timeout = timeout          # set before super().__init__(), which builds the tree
-        self._map = CarlaDataProvider.get_map()
+        self._map = SimulationData.get_map()
 
         # Parameters from the XML arrive as strings, in config.other_parameters
         params = config.other_parameters
@@ -58,7 +59,7 @@ class LeadBrakes(BasicScenario):
         lead_wp, _ = get_waypoint_in_distance(ego_wp, self._lead_distance)
         transform = lead_wp.transform
         transform.location.z += 0.5
-        lead = CarlaDataProvider.request_new_actor('vehicle.tesla.model3', transform)
+        lead = request_new_actor('vehicle.tesla.model3', transform)
         self.other_actors.append(lead)
 
     def _create_behavior(self):
@@ -166,7 +167,7 @@ For this to work the scenario has to place its actors relative to `config.trigge
 ## Rules that prevent most problems
 
 *   **Derive from `BasicScenario`.** Class discovery keeps only its subclasses, so a class that does not derive from it is invisible, with the same "not supported" message as a typo in `type`.
-*   **Spawn with `CarlaDataProvider.request_new_actor()`**, not `world.spawn_actor()`, so the actor is tracked and cleaned up.
+*   **Spawn with `request_new_actor()`** from `srunner.tools.actor_factory`, not `world.spawn_actor()`, and append what it returns to `self.other_actors` so `remove_all_actors()` destroys it.
 *   **Append every actor to `self.other_actors`**, or it outlives the scenario.
 *   **Make sure the tree can end.** Every child of your root `Sequence` has to succeed at some point, or every run ends at the timeout. `--debug` prints the tree each tick and shows which node is still `RUNNING`.
 *   **Set `self.timeout` before calling `super().__init__()`**, which is what builds the tree.

@@ -2,8 +2,9 @@
 import carla
 
 import srunner.osc2_stdlib.misc_object as misc
-import srunner.scenariomanager.carla_data_provider as carla_provider
 from srunner.tools.osc2_helper import OSC2Helper
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.actor_state import find_actor_by_name
 
 
 class Vehicle:
@@ -63,15 +64,13 @@ class Vehicle:
 
     def get_transform(self) -> carla.Transform:
         if OSC2Helper.wait_for_ego and self.rolename == OSC2Helper.ego_name:
-            actor = carla_provider.CarlaDataProvider.get_actor_by_name(self.rolename)
-            ret = carla_provider.CarlaDataProvider.get_transform(actor)
-            return ret
+            actor = find_actor_by_name(SimulationData.get_world(), self.rolename)
+            return actor.get_transform()
         if self.args.get("init_transform"):
             return self.args["init_transform"]
 
-        actor = carla_provider.CarlaDataProvider.get_actor_by_name(self.rolename)
-        ret = carla_provider.CarlaDataProvider.get_transform(actor)
-        return ret
+        actor = find_actor_by_name(SimulationData.get_world(), self.rolename)
+        return actor.get_transform()
 
 
 class Car(Vehicle):

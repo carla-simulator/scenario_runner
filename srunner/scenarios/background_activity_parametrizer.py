@@ -27,7 +27,7 @@ class BackgroundActivityParametrizer(BasicScenario):
     where we might want a different BA behavior.
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=180):
         """
         Setup all relevant parameters and create scenario
@@ -53,7 +53,6 @@ class BackgroundActivityParametrizer(BasicScenario):
         super().__init__("BackgroundActivityParametrizer",
                           ego_vehicles,
                           config,
-                          world,
                           debug_mode,
                           criteria_enable=criteria_enable)
 

@@ -12,7 +12,7 @@ Wrapper for autonomous agents required for tracking and checking of used sensors
 import carla
 
 from srunner.autoagents.sensor_interface import CallBack
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+from srunner.scenariomanager.simulation_data import SimulationData
 
 
 class AgentWrapper(object):
@@ -42,7 +42,7 @@ class AgentWrapper(object):
         :param vehicle: ego vehicle
         :return:
         """
-        bp_library = CarlaDataProvider.get_world().get_blueprint_library()
+        bp_library = SimulationData.get_world().get_blueprint_library()
         for sensor_spec in self._agent.sensors():
             # These are the sensors spawned on the carla world
             bp = bp_library.find(str(sensor_spec['type']))
@@ -74,13 +74,13 @@ class AgentWrapper(object):
 
             # create sensor
             sensor_transform = carla.Transform(sensor_location, sensor_rotation)
-            sensor = CarlaDataProvider.get_world().spawn_actor(bp, sensor_transform, vehicle)
+            sensor = SimulationData.get_world().spawn_actor(bp, sensor_transform, vehicle)
             # setup callback
             sensor.listen(CallBack(sensor_spec['id'], sensor, self._agent.sensor_interface))
             self._sensors_list.append(sensor)
 
         # Tick once to spawn the sensors
-        CarlaDataProvider.get_world().tick()
+        SimulationData.get_world().tick()
 
     def cleanup(self):
         """

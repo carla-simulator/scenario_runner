@@ -13,7 +13,6 @@ import py_trees
 
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ActorFlow, TrafficLightFreezer, ScenarioTimeout
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitEndIntersection, DriveDistance
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest, ScenarioTimeoutTest
@@ -27,6 +26,7 @@ from srunner.tools.scenario_helper import (generate_target_waypoint,
                                            get_interval_parameter)
 
 from srunner.tools.background_manager import HandleJunctionScenario, ChangeOppositeBehavior
+from srunner.scenariomanager.simulation_data import SimulationData
 
 
 class JunctionLeftTurn(BasicScenario):
@@ -35,14 +35,12 @@ class JunctionLeftTurn(BasicScenario):
     The ego has to react to them, safely crossing the opposite lane
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
         """
         Setup all relevant parameters and create scenario
         """
-        self._world = world
-        self._map = CarlaDataProvider.get_map()
-        self._rng = CarlaDataProvider.get_random_seed()
+        self._rng = SimulationData.get_rng()
 
         self.timeout = timeout
 
@@ -64,7 +62,6 @@ class JunctionLeftTurn(BasicScenario):
         super().__init__("JunctionLeftTurn",
                          ego_vehicles,
                          config,
-                         world,
                          debug_mode,
                          criteria_enable=criteria_enable)
 
@@ -74,7 +71,7 @@ class JunctionLeftTurn(BasicScenario):
         Override this method in child class to provide custom initialization.
         """
         ego_location = config.trigger_points[0].location
-        self._ego_wp = CarlaDataProvider.get_map().get_waypoint(ego_location)
+        self._ego_wp = SimulationData.get_map().get_waypoint(ego_location)
 
         # Get the junction
         starting_wp = self._ego_wp
@@ -145,9 +142,9 @@ class SignalizedJunctionLeftTurn(JunctionLeftTurn):
 
     timeout = 80  # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
-        super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
+        super().__init__(ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _initialize_actors(self, config):
         """
@@ -219,9 +216,9 @@ class NonSignalizedJunctionLeftTurn(JunctionLeftTurn):
 
     timeout = 80  # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=80):
-        super().__init__(world, ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
+        super().__init__(ego_vehicles, config, randomize, debug_mode, criteria_enable, timeout)
 
     def _create_behavior(self):
         """

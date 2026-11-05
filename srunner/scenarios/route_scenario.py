@@ -18,7 +18,6 @@ import carla
 from agents.navigation.local_planner import RoadOption
 
 from srunner.scenarioconfigs.scenario_configuration import ActorConfigurationData
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ScenarioTriggerer, Idle
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import WaitForBlackboardVariable
@@ -40,19 +39,11 @@ from srunner.scenariomanager.timer import RouteTimeoutBehavior
 from srunner.tools.route_parser import RouteParser, DIST_THRESHOLD
 from srunner.tools.scenario_class_loader import ScenarioClassLoader
 from srunner.tools.route_manipulation import interpolate_trajectory
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.actor_factory import request_new_actor
 
 
 SECONDS_GIVEN_PER_METERS = 0.4
-
-# Scenarios whose current definitions need actor-flow parameters that routes
-# authored for leaderboard-2.1 don't have, mapped to their 2.1-era classes
-# (see legacy_route_scenarios.py)
-LEGACY_PARAMETER_FALLBACKS = {
-    'ConstructionObstacle': 'ConstructionObstacleLegacy',
-    'ConstructionObstacleTwoWays': 'ConstructionObstacleTwoWaysLegacy',
-    'ParkingExit': 'ParkingExitLegacy',
-}
-
 
 def _adopt(node):
     """Detaches a node from the tree its scenario built, so the route can own it.
@@ -69,7 +60,7 @@ class RouteScenario(BasicScenario):
     along which several smaller scenarios are triggered
     """
 
-    def __init__(self, world, config, debug_mode=False, criteria_enable=True, timeout=300):
+    def __init__(self, config, debug_mode=False, criteria_enable=True, timeout=300):
         """
         Setup all relevant parameters and create scenarios along route
         """
@@ -83,7 +74,6 @@ class RouteScenario(BasicScenario):
 
         if debug_mode:
             self._draw_waypoints(
-                world,
                 self.route,
                 vertical_shift=0.1,
                 size=0.1,
@@ -92,20 +82,19 @@ class RouteScenario(BasicScenario):
             )
 
         self._build_scenarios(
-            world, ego_vehicle, sampled_scenario_definitions, timeout=self.timeout, debug=debug_mode > 0
+            ego_vehicle, sampled_scenario_definitions, timeout=self.timeout, debug=debug_mode > 0
         )
 
         super().__init__(
-            config.name, [ego_vehicle], config, world, debug_mode > 1, False, criteria_enable
+            config.name, [ego_vehicle], config, debug_mode > 1, False, criteria_enable
         )
 
     def _get_route(self, config):
         """
         Gets the route from the configuration, interpolating it to the desired density,
-        saving it to the CarlaDataProvider and sending it to the agent
+        saving it to the SimulationData and sending it to the agent
 
         Parameters:
-        - world: CARLA world
         - config: Scenario configuration (RouteConfiguration)
         - debug_mode: boolean to decide whether or not the route poitns are printed
         """
@@ -140,7 +129,7 @@ class RouteScenario(BasicScenario):
         elevate_transform = self.route[0][0]
         elevate_transform.location.z += 0.5
 
-        ego_vehicle = CarlaDataProvider.request_new_actor('vehicle.lincoln.mkz',
+        ego_vehicle = request_new_actor('vehicle.lincoln.mkz',
                                                           elevate_transform,
                                                           rolename='hero')
 
@@ -160,7 +149,7 @@ class RouteScenario(BasicScenario):
 
         return int(SECONDS_GIVEN_PER_METERS * route_length)
 
-    def _draw_waypoints(self, world, waypoints, vertical_shift, size, persistency=-1, downsample=1):
+    def _draw_waypoints(self, waypoints, vertical_shift, size, persistency=-1, downsample=1):
         """
         Draw a list of waypoints at a certain height given in vertical_shift.
         """
@@ -183,11 +172,11 @@ class RouteScenario(BasicScenario):
             else:  # LANEFOLLOW
                 color = carla.Color(0, 128, 0)  # Green
 
-            world.debug.draw_point(wp, size=0.1, color=color, life_time=persistency)
+            self._world.debug.draw_point(wp, size=0.1, color=color, life_time=persistency)
 
-        world.debug.draw_point(waypoints[0][0].location + carla.Location(z=vertical_shift), size=2*size,
+        self._world.debug.draw_point(waypoints[0][0].location + carla.Location(z=vertical_shift), size=2*size,
                                color=carla.Color(0, 0, 128), life_time=persistency)
-        world.debug.draw_point(waypoints[-1][0].location + carla.Location(z=vertical_shift), size=2*size,
+        self._world.debug.draw_point(waypoints[-1][0].location + carla.Location(z=vertical_shift), size=2*size,
                                color=carla.Color(128, 128, 128), life_time=persistency)
 
     def _scenario_sampling(self, potential_scenarios, random_seed=0):
@@ -211,7 +200,6 @@ class RouteScenario(BasicScenario):
 
     def _build_scenarios(
         self,
-        world,
         ego_vehicle,
         scenario_definitions,
         scenarios_per_tick=5,
@@ -227,12 +215,12 @@ class RouteScenario(BasicScenario):
         ego_data = ActorConfigurationData(ego_vehicle.type_id, ego_vehicle.get_transform(), 'hero')
 
         if debug:
-            tmap = CarlaDataProvider.get_map()
+            tmap = SimulationData.get_map()
             for scenario_config in scenario_definitions:
                 scenario_loc = scenario_config.trigger_points[0].location
                 debug_loc = tmap.get_waypoint(scenario_loc).transform.location + carla.Location(z=0.2)
-                world.debug.draw_point(debug_loc, size=0.2, color=carla.Color(128, 0, 0), life_time=timeout)
-                world.debug.draw_string(debug_loc, str(scenario_config.name), draw_shadow=False,
+                self._world.debug.draw_point(debug_loc, size=0.2, color=carla.Color(128, 0, 0), life_time=timeout)
+                self._world.debug.draw_string(debug_loc, str(scenario_config.name), draw_shadow=False,
                                         color=carla.Color(0, 0, 128), life_time=timeout, persistent_lines=True)
 
         for scenario_number, scenario_config in enumerate(scenario_definitions):
@@ -241,23 +229,12 @@ class RouteScenario(BasicScenario):
             scenario_config.route = self.route
 
             try:
-                scenario_type = scenario_config.type
-                # Routes authored for leaderboard-2.1 lack the actor-flow
-                # parameters some scenarios now require. Fall back to the
-                # 2.1-era definitions instead of skipping the scenario.
-                if scenario_type in LEGACY_PARAMETER_FALLBACKS \
-                        and 'start_actor_flow' not in scenario_config.other_parameters:
-                    legacy_type = LEGACY_PARAMETER_FALLBACKS[scenario_type]
-                    if legacy_type in all_scenario_classes:
-                        print("\033[93mScenario '{}' has no 'start_actor_flow' parameter, "
-                              "using its leaderboard-2.1 definition\033[0m".format(scenario_config.name))
-                        scenario_type = legacy_type
-                scenario_class = all_scenario_classes[scenario_type]
-                scenario_instance = scenario_class(world, [ego_vehicle], scenario_config, timeout=timeout)
+                scenario_class = all_scenario_classes[scenario_config.type]
+                scenario_instance = scenario_class([ego_vehicle], scenario_config, timeout=timeout)
 
                 # Do a tick every once in a while to avoid spawning everything at the same time
                 if scenario_number % scenarios_per_tick == 0:
-                    world.tick()
+                    SimulationData.tick_world()
 
             except Exception as e:
                 if not debug:
@@ -376,12 +353,12 @@ class RouteScenario(BasicScenario):
         """
         return RouteTimeoutBehavior(self.ego_vehicles[0], self.route)
 
-    def _initialize_environment(self, world):
+    def _initialize_environment(self):
         """
         Set the weather
         """
         # Set the appropriate weather conditions
-        world.set_weather(self.config.weather[0][1])
+        self._world.set_weather(self.config.weather[0][1])
 
     def _create_criterion_tree(self, scenario, criteria):
         """

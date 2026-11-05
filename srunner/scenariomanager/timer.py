@@ -13,8 +13,8 @@ timeout behavior using the CARLA game time
 import datetime
 import operator
 import py_trees
+from srunner.tools.actor_state import has_actor_ticked
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 
 class GameTime(object):
@@ -213,9 +213,9 @@ class RouteTimeoutBehavior(py_trees.behaviour.Behaviour):
         """
         new_status = py_trees.common.Status.RUNNING
 
-        ego_location = CarlaDataProvider.get_location(self._ego_vehicle)
-        if ego_location is None:
+        if not has_actor_ticked(self._ego_vehicle):
             return new_status
+        ego_location = self._ego_vehicle.get_location()
 
         new_index = self._current_index
 

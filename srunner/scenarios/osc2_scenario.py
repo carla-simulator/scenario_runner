@@ -38,7 +38,6 @@ from srunner.osc2_stdlib.modifier import (
 from srunner.scenarioconfigs.osc2_scenario_configuration import (
     OSC2ScenarioConfiguration,
 )
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
     ActorTransformSetter,
     ChangeTargetSpeed,
@@ -59,6 +58,9 @@ from srunner.tools.openscenario_parser import oneshot_with_check
 from srunner.tools.osc2_helper import OSC2Helper
 
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import ChangeActorWaypoints
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.actor_state import find_actor_by_name
+from srunner.tools.scenario_helper import get_waypoint_by_laneid
 
 def flatten(nested):
     result = []
@@ -157,7 +159,7 @@ def process_speed_modifier(
             # en_value_mps() The speed unit in Carla is m/s, so the default conversion unit is m/s
             target_speed = modifier.get_speed().gen_physical_value()
             # target_speed = float(modifier.get_speed())*0.27777778
-            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+            actor = find_actor_by_name(SimulationData.get_world(), actor_name)
             car_driving = WaypointFollower(actor, target_speed)
             # car_driving.set_duration(duration)
 
@@ -183,7 +185,7 @@ def process_speed_modifier(
                 f"{actor_name} car speed will be changed to {target_speed} km/h"
             )
 
-            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+            actor = find_actor_by_name(SimulationData.get_world(), actor_name)
             change_speed = ChangeTargetSpeed(actor, target_speed)
 
             car_driving = WaypointFollower(actor)
@@ -196,7 +198,7 @@ def process_speed_modifier(
             current_car_speed = current_car_conf.get_arg("target_speed")
             accelerate_speed = modifier.get_accelerate().gen_physical_value()
             target_velocity = current_car_speed + accelerate_speed * duration
-            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+            actor = find_actor_by_name(SimulationData.get_world(), actor_name)
             start_time = all_duration - duration
             uniform_accelerate_speed = UniformAcceleration(
                 actor, current_car_speed, target_velocity, accelerate_speed, start_time
@@ -230,7 +232,7 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
             av_side = modifier.get_side()
             print(f"The car changes lanes to the {av_side} for {lane_changes} lanes.")
             npc_name = modifier.get_actor_name()
-            actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            actor = find_actor_by_name(SimulationData.get_world(), npc_name)
             lane_change = LaneChange(
                 actor, speed=None, direction=av_side, lane_changes=lane_changes
             )
@@ -244,7 +246,7 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
             times = modifier.get_times()
             control = modifier.get_control()
             actor_name = modifier.get_actor_name()
-            actor = CarlaDataProvider.get_actor_by_name(actor_name)
+            actor = find_actor_by_name(SimulationData.get_world(), actor_name)
 
             initial_transform = OSC2Helper.get_init_trajectory_transform(waypoints)
             actor_visible = ActorTransformSetter(actor, initial_transform)
@@ -278,9 +280,9 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
 
     for m in event_start:
         car_name = m.get_actor_name()
-        wp = CarlaDataProvider.get_waypoint_by_laneid(m.get_lane_id())
+        wp = get_waypoint_by_laneid(m.get_lane_id())
         if wp:
-            actor = CarlaDataProvider.get_actor_by_name(car_name)
+            actor = find_actor_by_name(SimulationData.get_world(), car_name)
             actor_visible = ActorTransformSetter(actor, wp.transform)
             father_tree.add_child(actor_visible)
 
@@ -309,7 +311,7 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
         relative_car_conf = config.get_car_config(relative_car_name)
         relative_car_location = relative_car_conf.get_transform().location
 
-        relative_wp = CarlaDataProvider.get_map().get_waypoint(relative_car_location)
+        relative_wp = SimulationData.get_map().get_waypoint(relative_car_location)
 
         if init_wp is None:
             init_wp = relative_wp
@@ -339,7 +341,7 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
             raise KeyError(f"wrong location = {location}")
 
     if init_wp:
-        actor = CarlaDataProvider.get_actor_by_name(npc_name)
+        actor = find_actor_by_name(SimulationData.get_world(), npc_name)
         npc_car_visible = ActorTransformSetter(actor, init_wp.transform)
         father_tree.add_child(npc_car_visible)
 
@@ -363,7 +365,7 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
         relative_car_location = relative_car_conf.get_transform().location
         LOG_WARNING(f"{relative_car_name} pos = {relative_car_location}")
 
-        relative_car_wp = CarlaDataProvider.get_map().get_waypoint(
+        relative_car_wp = SimulationData.get_map().get_waypoint(
             relative_car_location
         )
         relative_car_speed = relative_car_conf.get_arg("target_speed")
@@ -406,7 +408,7 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
         current_car_transform = current_car_conf.get_arg("init_transform")
 
         # Get the global route planner, used to calculate the route
-        grp = GlobalRoutePlanner(CarlaDataProvider.get_world().get_map(), 0.5)
+        grp = GlobalRoutePlanner(SimulationData.get_world().get_map(), 0.5)
         # grp.setup()
 
         distance = calculate_distance(
@@ -420,7 +422,7 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
             f"{npc_name} car desired speed will be set to {car_need_speed * 3.6} km/h"
         )
 
-        car_actor = CarlaDataProvider.get_actor_by_name(npc_name)
+        car_actor = find_actor_by_name(SimulationData.get_world(), npc_name)
         car_driving = WaypointFollower(car_actor, car_need_speed)
         # car_driving.set_duration(duration)
         father_tree.add_child(car_driving)
@@ -428,7 +430,7 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
     if end_lane_wp:
         current_car_conf = config.get_car_config(npc_name)
         current_car_transform = current_car_conf.get_arg("init_transform")
-        car_lane_wp = CarlaDataProvider.get_map().get_waypoint(
+        car_lane_wp = SimulationData.get_map().get_waypoint(
             current_car_transform.location
         )
 
@@ -445,7 +447,7 @@ def process_location_modifier(config: OSC2ScenarioConfiguration, modifiers: list
             else:
                 print("no need change lane")
 
-            car_actor = CarlaDataProvider.get_actor_by_name(npc_name)
+            car_actor = find_actor_by_name(SimulationData.get_world(), npc_name)
 
             lane_change = LaneChange(
                 car_actor,
@@ -475,7 +477,6 @@ class OSC2Scenario(BasicScenario):
 
     def __init__(
         self,
-        world,
         ego_vehicles,
         config: OSC2ScenarioConfiguration,
         osc2_file,
@@ -509,7 +510,6 @@ class OSC2Scenario(BasicScenario):
             "OSC2Scenario",
             ego_vehicles=ego_vehicles,
             config=config,
-            world=world,
             debug_mode=debug_mode,
             terminate_on_failure=False,
             criteria_enable=criteria_enable,
@@ -567,10 +567,10 @@ class OSC2Scenario(BasicScenario):
             y = expression_value[1]
             if "ego" in x:
                 actor_name = "ego_vehicle"
-                actor_ego = CarlaDataProvider.get_actor_by_name(actor_name)
+                actor_ego = find_actor_by_name(SimulationData.get_world(), actor_name)
             if "npc" in y:
                 actor_name = "npc"
-                actor_npc = CarlaDataProvider.get_actor_by_name(actor_name)
+                actor_npc = find_actor_by_name(SimulationData.get_world(), actor_name)
             return actor_ego, actor_npc, symbol
 
         def visit_do_member(self, node: ast_node.DoMember):
@@ -894,7 +894,7 @@ name="emit"
                         speed_modifiers.append(modifier_ins)
 
                     elif modifier_name == "keep_lane":
-                        actor_object = CarlaDataProvider.get_actor_by_name(actor)
+                        actor_object = find_actor_by_name(SimulationData.get_world(), actor)
                         car_driving = WaypointFollower(actor_object)
                         actor_drive.add_child(car_driving)
 
@@ -991,7 +991,7 @@ name="emit"
                         )
 
             if modifier_invocation_no_occur:
-                car_actor = CarlaDataProvider.get_actor_by_name(actor)
+                car_actor = find_actor_by_name(SimulationData.get_world(), actor)
                 car_driving = WaypointFollower(car_actor)
                 actor_drive.add_child(car_driving)
                 behavior.add_child(actor_drive)

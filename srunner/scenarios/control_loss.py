@@ -18,12 +18,13 @@ import operator
 
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import AddNoiseToRouteEgo
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import DriveDistance, InTriggerDistanceToLocation
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.actor_factory import request_new_actor
 
 
 class ControlLoss(BasicScenario):
@@ -34,16 +35,15 @@ class ControlLoss(BasicScenario):
     This is a single ego vehicle scenario
     """
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
         """
         Setup all relevant parameters and create scenario
         """
         self.timeout = timeout
         self._randomize = randomize
-        self._rng = CarlaDataProvider.get_random_seed()
+        self._rng = SimulationData.get_rng()
 
-        self._map = CarlaDataProvider.get_map()
         self._end_distance = 110
 
         # Friction loss tends to have a much stronger steering compoenent then a throttle one
@@ -54,7 +54,7 @@ class ControlLoss(BasicScenario):
 
         self._trigger_dist = 2
 
-        super().__init__("ControlLoss", ego_vehicles, config, world, debug_mode, criteria_enable=criteria_enable)
+        super().__init__("ControlLoss", ego_vehicles, config, debug_mode, criteria_enable=criteria_enable)
 
     def _initialize_actors(self, config):
         """
@@ -68,7 +68,6 @@ class ControlLoss(BasicScenario):
             self._distance = [14, 48, 74]
             self._offset = [-0.6, 0.8, 0.2]
 
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
 
         # Get the debris locations
         first_wp, _ = get_waypoint_in_distance(self._reference_waypoint, self._distance[0])
@@ -87,11 +86,11 @@ class ControlLoss(BasicScenario):
         self.third_transform = carla.Transform(third_loc, third_wp.transform.rotation)
 
         # Spawn the debris
-        first_debris = CarlaDataProvider.request_new_actor(
+        first_debris = request_new_actor(
             'static.prop.dirtdebris01', self.first_transform, rolename='prop')
-        second_debris = CarlaDataProvider.request_new_actor(
+        second_debris = request_new_actor(
             'static.prop.dirtdebris01', self.second_transform, rolename='prop')
-        third_debris = CarlaDataProvider.request_new_actor(
+        third_debris = request_new_actor(
             'static.prop.dirtdebris01', self.third_transform, rolename='prop')
 
         # Remove their physics

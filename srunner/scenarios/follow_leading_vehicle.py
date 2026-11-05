@@ -22,7 +22,6 @@ import py_trees
 
 import carla
 
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (ActorTransformSetter,
                                                                       ActorDestroy,
                                                                       KeepVelocity,
@@ -36,6 +35,7 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (I
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
+from srunner.tools.actor_factory import request_new_actor
 
 
 class FollowLeadingVehicle(BasicScenario):
@@ -49,7 +49,7 @@ class FollowLeadingVehicle(BasicScenario):
 
     timeout = 120            # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True,
                  timeout=60):
         """
         Setup all relevant parameters and create scenario
@@ -57,10 +57,8 @@ class FollowLeadingVehicle(BasicScenario):
         If randomize is True, the scenario parameters are randomized
         """
 
-        self._map = CarlaDataProvider.get_map()
         self._first_vehicle_location = 25
         self._first_vehicle_speed = 10
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._other_actor_max_brake = 1.0
         self._other_actor_stop_in_front_intersection = 20
         self._other_actor_transform = None
@@ -70,7 +68,6 @@ class FollowLeadingVehicle(BasicScenario):
         super().__init__("FollowVehicle",
                                                    ego_vehicles,
                                                    config,
-                                                   world,
                                                    debug_mode,
                                                    criteria_enable=criteria_enable)
 
@@ -80,7 +77,7 @@ class FollowLeadingVehicle(BasicScenario):
             # Example code how to randomize start location
             # distance = random.randint(20, 80)
             # new_location, _ = get_location_in_distance(self.ego_vehicles[0], distance)
-            # waypoint = CarlaDataProvider.get_map().get_waypoint(new_location)
+            # waypoint = SimulationData.get_map().get_waypoint(new_location)
             # waypoint.transform.location.z += 39
             # self.other_actors[0].set_transform(waypoint.transform)
 
@@ -91,7 +88,7 @@ class FollowLeadingVehicle(BasicScenario):
         waypoint, _ = get_waypoint_in_distance(self._reference_waypoint, self._first_vehicle_location)
         transform = waypoint.transform
         transform.location.z += 0.5
-        first_vehicle = CarlaDataProvider.request_new_actor('vehicle.nissan.patrol', transform)
+        first_vehicle = request_new_actor('vehicle.nissan.patrol', transform)
         self.other_actors.append(first_vehicle)
 
     def _create_behavior(self):
@@ -167,16 +164,14 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
 
     timeout = 120            # Timeout of scenario in seconds
 
-    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True):
+    def __init__(self, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True):
         """
         Setup all relevant parameters and create scenario
         """
-        self._map = CarlaDataProvider.get_map()
         self._first_actor_location = 25
         self._second_actor_location = self._first_actor_location + 41
         self._first_actor_speed = 10
         self._second_actor_speed = 1.5
-        self._reference_waypoint = self._map.get_waypoint(config.trigger_points[0].location)
         self._other_actor_max_brake = 1.0
         self._first_actor_transform = None
         self._second_actor_transform = None
@@ -184,7 +179,6 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
         super().__init__("FollowLeadingVehicleWithObstacle",
                                                                ego_vehicles,
                                                                config,
-                                                               world,
                                                                debug_mode,
                                                                criteria_enable=criteria_enable)
         if randomize:
@@ -221,9 +215,9 @@ class FollowLeadingVehicleWithObstacle(BasicScenario):
             carla.Rotation(second_actor_waypoint.transform.rotation.pitch, yaw_1,
                            second_actor_waypoint.transform.rotation.roll))
 
-        first_actor = CarlaDataProvider.request_new_actor(
+        first_actor = request_new_actor(
             'vehicle.nissan.patrol', first_actor_transform)
-        second_actor = CarlaDataProvider.request_new_actor(
+        second_actor = request_new_actor(
             'vehicle.diamondback.century', second_actor_transform)
 
         first_actor.set_simulate_physics(enabled=False)

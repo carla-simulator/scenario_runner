@@ -2,8 +2,9 @@ import carla
 from carla import LandmarkType, Waypoint
 
 from srunner.osc2_dm.physical_types import Physical
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.tools.osc2_helper import OSC2Helper
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.scenario_helper import get_road_lane_cnt
 
 
 class OverJunctionCheck:
@@ -174,7 +175,7 @@ class OverLanesDecreaseCheck:
         Output: Whether the number of lanes decreases within distance ahead of wp.
         """
         distance = int(self.distance.gen_single_value())
-        lane_cnt = CarlaDataProvider.get_road_lane_cnt(wp)
+        lane_cnt = get_road_lane_cnt(wp)
 
         for dis in range(1, distance + 1):
             next_wps = wp.next(dis)
@@ -183,7 +184,7 @@ class OverLanesDecreaseCheck:
                 next_wp = next_wps[0]
                 if next_wp.is_junction:
                     return False
-                next_lanes_cnt = CarlaDataProvider.get_road_lane_cnt(next_wp)
+                next_lanes_cnt = get_road_lane_cnt(next_wp)
                 if next_lanes_cnt < lane_cnt:
                     return True
             else:
@@ -192,7 +193,7 @@ class OverLanesDecreaseCheck:
         return False
 
 
-class PathTrafficSign(CarlaDataProvider):
+class PathTrafficSign(object):
     _length = 100.0
     distance_step = 2.0
     wps = []
@@ -291,7 +292,7 @@ class PathDiffOrigin(object):
 
         # Find all generative points on the map except the one you just made.
         # Each point generates a path of the specified length
-        _map = CarlaDataProvider.get_map(CarlaDataProvider.world)
+        _map = SimulationData.get_map()
         wps = _map.get_spawn_points()
         all_path = []
         path_wps = []
@@ -323,7 +324,7 @@ class PathExplicit(object):
         self.tolerance = float(tolerance)
 
     def gen_path_by_point(self, wp):
-        carla_map = CarlaDataProvider.get_map()
+        carla_map = SimulationData.get_map()
         start_road_id, start_lane_id, start_s = (
             self.start_point_parm[0],
             self.start_point_parm[1],

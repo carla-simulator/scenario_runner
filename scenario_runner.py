@@ -44,13 +44,17 @@ except ModuleNotFoundError:
 import carla
 
 from srunner.scenarioconfigs.openscenario_configuration import OpenScenarioConfiguration
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenario_manager import ScenarioManager
 from srunner.scenarios.open_scenario import OpenScenario
 from srunner.scenarios.route_scenario import RouteScenario
 from srunner.tools.scenario_parser import ScenarioConfigurationParser
 from srunner.tools.route_parser import RouteParser
 from srunner.tools.scenario_class_loader import ScenarioClassLoader
+from srunner.scenariomanager.simulation_data import SimulationData
+from srunner.tools.actor_factory import request_new_actor
+from srunner.tools.map_utils import resolve_map_name
+from srunner.tools.actor_state import destroy_actors
+from srunner.tools.osc_globals import clear_osc_global_params
 # OpenSCENARIO 2.0 support requires antlr4-python3-runtime (the parser is
 # generated with ANTLR 4.9.3, the version that packages like omegaconf accept).
 # Import lazily so every other mode works without it; --openscenario2 reports
@@ -197,35 +201,30 @@ class ScenarioRunner(object):
             except RuntimeError:
                 sys.exit(-1)
 
-        # self.manager.cleanup()
-
-        # CarlaDataProvider.cleanup()
-
-        # The CarlaDataProvider batch-destroys every actor it spawned, ego
-        # included, and destroying an actor twice is an error for CARLA UE5
-        # servers. Actor.is_alive (and even World.get_actor) never learn about
-        # batch destructions, so check the world snapshot after a fresh tick,
-        # which is the only client-side view that reflects them.
-        snapshot = None
-        if self.world is not None:
-            try:
-                self.world.wait_for_tick()
-                snapshot = self.world.get_snapshot()
-            except RuntimeError:
-                pass
-
-        for i, _ in enumerate(self.ego_vehicles):
-            if self.ego_vehicles[i]:
-                if not self._args.waitForEgo and self.ego_vehicles[i] is not None and self.ego_vehicles[i].is_alive:
-                    if snapshot is None or snapshot.find(self.ego_vehicles[i].id) is not None:
-                        print("Destroying ego vehicle {}".format(self.ego_vehicles[i].id))
-                        self.ego_vehicles[i].destroy()
-                self.ego_vehicles[i] = None
-        self.ego_vehicles = []
-
         if self.agent_instance:
             self.agent_instance.destroy()
             self.agent_instance = None
+
+        # Make sure no sensors are left streaming. Actors are destroyed by whoever
+        # created them, but a leaked sensor would keep feeding an agent that is gone.
+        # Before the egos go, or their sensors are already gone with them and this fails.
+        if self.world is not None:
+            try:
+                for sensor in self.world.get_actors().filter('*sensor*'):
+                    sensor.stop()
+                    sensor.destroy()
+            except RuntimeError:
+                pass
+
+        if self.manager:
+            self.manager.cleanup()
+
+        if not self._args.waitForEgo:
+            destroy_actors(self.ego_vehicles)
+        self.ego_vehicles = []
+
+        SimulationData.cleanup()
+        clear_osc_global_params()
 
     def _prepare_ego_vehicles(self, ego_vehicles):
         """
@@ -234,7 +233,7 @@ class ScenarioRunner(object):
 
         if not self._args.waitForEgo:
             for vehicle in ego_vehicles:
-                self.ego_vehicles.append(CarlaDataProvider.request_new_actor(vehicle.model,
+                self.ego_vehicles.append(request_new_actor(vehicle.model,
                                                                              vehicle.transform,
                                                                              vehicle.rolename,
                                                                              random_location=vehicle.random_location,
@@ -247,7 +246,7 @@ class ScenarioRunner(object):
                 ego_vehicle_missing = False
                 for ego_vehicle in ego_vehicles:
                     ego_vehicle_found = False
-                    carla_vehicles = CarlaDataProvider.get_world().get_actors().filter('vehicle.*')
+                    carla_vehicles = SimulationData.get_world().get_actors().filter('vehicle.*')
                     for carla_vehicle in carla_vehicles:
                         if carla_vehicle.attributes['role_name'] == ego_vehicle.rolename:
                             ego_vehicle_found = True
@@ -262,13 +261,9 @@ class ScenarioRunner(object):
                 self.ego_vehicles[i].set_target_velocity(carla.Vector3D())
                 self.ego_vehicles[i].set_target_angular_velocity(carla.Vector3D())
                 self.ego_vehicles[i].apply_control(carla.VehicleControl())
-                CarlaDataProvider.register_actor(self.ego_vehicles[i], ego_vehicles[i].transform)
 
         # sync state
-        if CarlaDataProvider.is_sync_mode():
-            self.world.tick()
-        else:
-            self.world.wait_for_tick()
+        SimulationData.tick_world()
 
     def _analyze_scenario(self, config):
         """
@@ -332,10 +327,10 @@ class ScenarioRunner(object):
 
     def _load_and_wait_for_world(self, town, ego_vehicles=None):
         """
-        Load a new CARLA world and provide data to CarlaDataProvider
+        Load a new CARLA world and hand it to SimulationData
         """
 
-        town = CarlaDataProvider.resolve_map_name(town, self.client)
+        town = resolve_map_name(self.client, town)
 
         if self._args.reloadWorld:
             self.world = self.client.load_world(town)
@@ -364,16 +359,13 @@ class ScenarioRunner(object):
             settings.fixed_delta_seconds = 1.0 / self._args.frameRate
             self.world.apply_settings(settings)
 
-        CarlaDataProvider.set_client(self.client)
-        CarlaDataProvider.set_world(self.world)
+        SimulationData.set_client(self.client)
+        SimulationData.prepare_world(self.world)
 
         # Wait for the world to be ready
-        if CarlaDataProvider.is_sync_mode():
-            self.world.tick()
-        else:
-            self.world.wait_for_tick()
+        SimulationData.tick_world()
 
-        map_name = CarlaDataProvider.get_map().name.split('/')[-1]
+        map_name = SimulationData.get_map().name.split('/')[-1]
         if map_name not in (town, "OpenDriveMap"):
             print("The CARLA server uses the wrong map: {}".format(map_name))
             print("This scenario requires to use map: {}".format(town))
@@ -401,7 +393,7 @@ class ScenarioRunner(object):
                 self._cleanup()
                 return False
 
-        CarlaDataProvider.set_traffic_manager_port(int(self._args.trafficManagerPort))
+        SimulationData.set_traffic_manager_port(int(self._args.trafficManagerPort))
         tm = self.client.get_trafficmanager(int(self._args.trafficManagerPort))
         tm.set_random_device_seed(int(self._args.trafficManagerSeed))
         if self._args.sync:
@@ -412,25 +404,21 @@ class ScenarioRunner(object):
         try:
             self._prepare_ego_vehicles(config.ego_vehicles)
             if self._args.openscenario:
-                scenario = OpenScenario(world=self.world,
-                                        ego_vehicles=self.ego_vehicles,
+                scenario = OpenScenario(ego_vehicles=self.ego_vehicles,
                                         config=config,
                                         config_file=self._args.openscenario,
                                         timeout=100000)
             elif self._args.route:
-                scenario = RouteScenario(world=self.world,
-                                         config=config,
+                scenario = RouteScenario(config=config,
                                          debug_mode=self._args.debug)
             elif self._args.openscenario2:
-                scenario = OSC2Scenario(world=self.world,
-                                        ego_vehicles=self.ego_vehicles,
+                scenario = OSC2Scenario(ego_vehicles=self.ego_vehicles,
                                         config=config,
                                         osc2_file=self._args.openscenario2,
                                         timeout=100000)
             else:
                 scenario_class = self._get_scenario_class_or_fail(config.type)
-                scenario = scenario_class(world=self.world,
-                                          ego_vehicles=self.ego_vehicles,
+                scenario = scenario_class(ego_vehicles=self.ego_vehicles,
                                           config=config,
                                           randomize=self._args.randomize,
                                           debug_mode=self._args.debug)
