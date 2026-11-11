@@ -2202,6 +2202,6 @@ class ScenarioTimeoutTest(Criterion):
             traffic_event = TrafficEvent(event_type=TrafficEventType.SCENARIO_TIMEOUT, frame=GameTime.get_frame())
             traffic_event.set_message("Agent timed out a scenario")
             self.events.append(traffic_event)
-        set_blackboard(blackboard_name, None, True)
+        set_blackboard(blackboard_name, None)
 
         super().terminate(new_status)

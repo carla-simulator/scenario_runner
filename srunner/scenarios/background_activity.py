@@ -1665,7 +1665,7 @@ class BackgroundBehavior(AtomicBehavior):
             if extra_space is not None:
                 self._road_extra_space = extra_space
             self._get_road_radius()
-            set_blackboard('BA_ChangeRoadBehavior', None, True)
+            set_blackboard('BA_ChangeRoadBehavior', None)
 
         # Opposite behavior
         opposite_behavior_data = get_blackboard('BA_ChangeOppositeBehavior')
@@ -1683,7 +1683,7 @@ class BackgroundBehavior(AtomicBehavior):
                 self._active_opposite_sources = active
                 for source in self._opposite_sources:
                     source.active = active
-            set_blackboard('BA_ChangeOppositeBehavior', None, True)
+            set_blackboard('BA_ChangeOppositeBehavior', None)
 
         # Junction behavior
         junction_behavior_data = get_blackboard('BA_ChangeJunctionBehavior')
@@ -1700,73 +1700,73 @@ class BackgroundBehavior(AtomicBehavior):
                 self._junction_sources_max_actors = max_actors
             if source_perc is not None:
                 self._junction_source_perc = source_perc
-            set_blackboard('BA_ChangeJunctionBehavior', None, True)
+            set_blackboard('BA_ChangeJunctionBehavior', None)
 
         # Max speed
         max_speed = get_blackboard('BA_SetMaxSpeed')
         if max_speed is not None:
             self._scenario_max_speed = max_speed
-            set_blackboard('BA_SetMaxSpeed', None, True)
+            set_blackboard('BA_SetMaxSpeed', None)
 
         # Stop front vehicles
         stop_data = get_blackboard('BA_StopFrontVehicles')
         if stop_data is not None:
             self._stop_road_front_vehicles()
-            set_blackboard('BA_StopFrontVehicles', None, True)
+            set_blackboard('BA_StopFrontVehicles', None)
 
         # Start front vehicles
         start_data = get_blackboard('BA_StartFrontVehicles')
         if start_data is not None:
             self._start_road_front_vehicles()
-            set_blackboard("BA_StartFrontVehicles", None, True)
+            set_blackboard("BA_StartFrontVehicles", None)
 
         # Stop back vehicles
         stop_back_data = get_blackboard('BA_StopBackVehicles')
         if stop_back_data is not None:
             self._stop_road_back_vehicles()
-            set_blackboard('BA_StopBackVehicles', None, True)
+            set_blackboard('BA_StopBackVehicles', None)
 
         # Start back vehicles
         start_back_data = get_blackboard('BA_StartBackVehicles')
         if start_back_data is not None:
             self._start_road_back_vehicles()
-            set_blackboard("BA_StartBackVehicles", None, True)
+            set_blackboard("BA_StartBackVehicles", None)
 
         # Leave space in front
         leave_space_data = get_blackboard('BA_LeaveSpaceInFront')
         if leave_space_data is not None:
             self._leave_space_in_front(leave_space_data)
-            set_blackboard('BA_LeaveSpaceInFront', None, True)
+            set_blackboard('BA_LeaveSpaceInFront', None)
 
         # Leave crosssing space
         leave_crossing_space_data = get_blackboard('BA_LeaveCrossingSpace')
         if leave_crossing_space_data is not None:
             self._leave_crossing_space(leave_crossing_space_data)
-            set_blackboard('BA_LeaveCrossingSpace', None, True)
+            set_blackboard('BA_LeaveCrossingSpace', None)
 
         # Remove road lane
         remove_road_lane_data = get_blackboard('BA_RemoveRoadLane')
         if remove_road_lane_data is not None:
             self._remove_road_lane(remove_road_lane_data)
-            set_blackboard('BA_RemoveRoadLane', None, True)
+            set_blackboard('BA_RemoveRoadLane', None)
 
         # Readd road lane
         readd_road_lane_data = get_blackboard('BA_ReAddRoadLane')
         if readd_road_lane_data is not None:
             self._readd_road_lane(readd_road_lane_data)
-            set_blackboard('BA_ReAddRoadLane', None, True)
+            set_blackboard('BA_ReAddRoadLane', None)
 
         # Adapt the BA to the junction scenario
         junction_scenario_data = get_blackboard('BA_HandleJunctionScenario')
         if junction_scenario_data is not None:
             self._handle_junction_scenario(junction_scenario_data)
-            set_blackboard("BA_HandleJunctionScenario", None, True)
+            set_blackboard("BA_HandleJunctionScenario", None)
 
         # Switch route sources
         switch_sources_data = get_blackboard('BA_SwitchRouteSources')
         if switch_sources_data is not None:
             self._switch_route_sources(switch_sources_data)
-            set_blackboard("BA_SwitchRouteSources", None, True)
+            set_blackboard("BA_SwitchRouteSources", None)
 
         self._compute_parameters()
 

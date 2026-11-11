@@ -3,7 +3,7 @@ numpy
 networkx
 Shapely
 psutil
-xmlschema==1.0.18
+xmlschema==4.3.2
 ephem
 tabulate
 opencv-python

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="0" revMinor="9" date="2020-02-17" description="CARLA:VehicleCatalog" author="Anja Sheppard"/>
+  <FileHeader revMajor="0" revMinor="9" date="2020-02-17T00:00:00" description="CARLA:VehicleCatalog" author="Anja Sheppard"/>
   <Catalog name="VehicleCatalog">
     <Vehicle name="vehicle.volkswagen.t2" vehicleCategory="car">
       <ParameterDeclarations/>

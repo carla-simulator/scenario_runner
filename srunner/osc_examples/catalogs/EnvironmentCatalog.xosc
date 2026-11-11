@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="0" revMinor="9" date="2020-02-20" description="CARLA:EnvironmentCatalog" author="Anja Sheppard"/>
+  <FileHeader revMajor="0" revMinor="9" date="2020-02-20T00:00:00" description="CARLA:EnvironmentCatalog" author="Anja Sheppard"/>
   <Catalog name="EnvironmentCatalog">
     <Environment name="ClearNoon">
       <TimeOfDay animation="false" dateTime="2020-01-01T12:00:00"/>

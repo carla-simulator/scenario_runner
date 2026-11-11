@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="0" revMinor="9" date="2020-02-25" description="CARLA:MiscObjectCatalog" author="Anja Sheppard"/>
+  <FileHeader revMajor="0" revMinor="9" date="2020-02-25T00:00:00" description="CARLA:MiscObjectCatalog" author="Anja Sheppard"/>
   <Catalog name="MiscObjectCatalog">
     <MiscObject miscObjectCategory="barrier" mass="0.0" name="Barrier1">
       <ParameterDeclarations/>

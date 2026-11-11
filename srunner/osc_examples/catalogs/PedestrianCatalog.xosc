@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="0" revMinor="9" date="2020-02-20" description="CARLA:PedestrianCatalog" author="Anja Sheppard"/>
+  <FileHeader revMajor="0" revMinor="9" date="2020-02-20T00:00:00" description="CARLA:PedestrianCatalog" author="Anja Sheppard"/>
   <Catalog name="PedestrianCatalog">
     <Pedestrian model="walker.pedestrian.0001" mass="0.0" name="Pedestrian1" pedestrianCategory="pedestrian">
       <BoundingBox>
