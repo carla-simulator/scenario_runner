@@ -26,6 +26,7 @@
 * `npc_agent` follows the global plan it is given instead of re-tracing it point by point, which could detour inside a junction and leave the route.
 * `manual_control.py` runs on CARLA UE5. It no longer sets the RGB camera's removed `gamma` attribute, and it tracks the ego through the world snapshot.
 * Updated the blueprint ids of the example and route files to ones that exist in CARLA UE5.
+* `BasicAgentBehavior`, `ConstantVelocityAgentBehavior` and `AdaptiveConstantVelocityAgentBehavior` no longer raise when their actor is already destroyed on termination. A scenario that destroys the actor before the tree stops, such as `StaticCutIn`, ended with "trying to operate on a destroyed actor" and no results.
 
 ### :ghost: Maintenance
 * Requires CARLA 1.0 and py_trees 2.6.0, up from CARLA 0.9.14 and py_trees 0.8.3. The `six` dependency and the remaining Python 2 compatibility code are gone.
