@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO>
+  <FileHeader revMajor="1" revMinor="2" date="2026-11-20T12:00:00" description="MSCA STEP-UP DC8: Multi-Lane CAV eHMI Overtrust &amp; Adjacent Overtaking Threat" author="Horizon Europe MSCA STEP-UP Consortium"/>
+  <ParameterDeclarations>
+    <ParameterDeclaration name="CavNearLaneSpeedMs" parameterType="double" value="8.33"/>
+    <ParameterDeclaration name="AdjacentVehicleSpeedMs" parameterType="double" value="12.50"/>
+    <ParameterDeclaration name="PedCrossingSpeedMs" parameterType="double" value="1.32"/>
+  </ParameterDeclarations>
+  <CatalogLocations/>
+  <RoadNetwork>
+    <LogicFile filepath="Town05"/>
+    <SceneGraphFile filepath=""/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="ego_vehicle">
+      <Vehicle name="vehicle.lincoln.mkz_2020" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="50.0" maxAcceleration="4.0" maxDeceleration="8.5"/>
+        <BoundingBox>
+          <Center x="1.4" y="0.0" z="0.75"/>
+          <Dimensions width="2.0" length="4.9" height="1.5"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.7" trackWidth="1.7" positionX="2.8" positionZ="0.35"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.7" trackWidth="1.7" positionX="0.0" positionZ="0.35"/>
+        </Axles>
+        <Properties>
+          <Property name="type" value="ego_vehicle"/>
+          <Property name="ehmi_mode" value="VRU_DETECTED_YIELDING"/>
+          <Property name="ehmi_pulse_hz" value="1.5"/>
+          <Property name="v2p_multilane_warning" value="enabled"/>
+        </Properties>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="veh_adjacent_non_yielding">
+      <Vehicle name="vehicle.audi.tt" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="55.0" maxAcceleration="4.5" maxDeceleration="8.0"/>
+        <BoundingBox>
+          <Center x="1.3" y="0.0" z="0.70"/>
+          <Dimensions width="1.9" length="4.3" height="1.4"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.68" trackWidth="1.65" positionX="2.5" positionZ="0.34"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.68" trackWidth="1.65" positionX="0.0" positionZ="0.34"/>
+        </Axles>
+        <Properties>
+          <Property name="ehmi_mode" value="OFF"/>
+          <Property name="driver_compliance" value="non_yielding"/>
+        </Properties>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="ped_ehmi_trusting">
+      <Pedestrian model="walker.pedestrian.0004" mass="70.0" name="walker.pedestrian.0004" pedestrianCategory="pedestrian">
+        <ParameterDeclarations/>
+        <BoundingBox>
+          <Center x="0.0" y="0.0" z="0.88"/>
+          <Dimensions width="0.48" length="0.48" height="1.76"/>
+        </BoundingBox>
+        <Properties>
+          <Property name="stepup_archetype" value="adult_baseline"/>
+          <Property name="ehmi_log_odds_gain" value="0.45"/>
+        </Properties>
+      </Pedestrian>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <Private entityRef="ego_vehicle">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="24.0" y="-3.50" z="0.3" h="3.14159" p="0.0" r="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="$CavNearLaneSpeedMs"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="veh_adjacent_non_yielding">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="52.0" y="-0.25" z="0.3" h="3.14159" p="0.0" r="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="$AdjacentVehicleSpeedMs"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="ped_ehmi_trusting">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="0.0" y="-6.20" z="0.3" h="1.5708" p="0.0" r="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+      </Actions>
+    </Init>
+    <Story name="MultiLaneEhmiOvertrustStory">
+      <Act name="MultiLaneConflictAct">
+        <ManeuverGroup maximumExecutionCount="1" name="NearLaneCavYieldGroup">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="ego_vehicle"/>
+          </Actors>
+          <Maneuver name="NearLaneCavYieldsWithCyanEhmi">
+            <Event name="CavStopBeforeZebraEvent" priority="overwrite">
+              <Action name="CavSmoothYieldStop">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="2.8" dynamicsDimension="time"/>
+                      <SpeedActionTarget>
+                        <AbsoluteTargetSpeed value="0.0"/>
+                      </SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="CavApproachesZebraCondition" delay="0.0" conditionEdge="rising">
+                    <ByEntityCondition>
+                      <TriggeringEntities triggeringEntitiesRule="any">
+                        <EntityRef entityRef="ego_vehicle"/>
+                      </TriggeringEntities>
+                      <EntityCondition>
+                        <RelativeDistanceCondition entityRef="ped_ehmi_trusting" relativeDistanceType="euclidianDistance" value="19.0" freespace="false" rule="lessThan"/>
+                      </EntityCondition>
+                    </ByEntityCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <ManeuverGroup maximumExecutionCount="1" name="PedestrianEhmiInducedCrossingGroup">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="ped_ehmi_trusting"/>
+          </Actors>
+          <Maneuver name="PedestrianCommitsAcrossTwoLanes">
+            <Event name="PedestrianStepsOutOnEhmiEvent" priority="overwrite">
+              <Action name="PedestrianWalkAcrossBothLanes">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="0.25" dynamicsDimension="time"/>
+                      <SpeedActionTarget>
+                        <AbsoluteTargetSpeed value="$PedCrossingSpeedMs"/>
+                      </SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="AfterEhmiDisplayCondition" delay="1.2" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="1.5" rule="greaterThan"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="MultiLaneActStart" delay="0.0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0.0" rule="greaterOrEqual"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+      </Act>
+    </Story>
+    <StopTrigger>
+      <ConditionGroup>
+        <Condition name="MultiLaneScenarioEnd" delay="0.0" conditionEdge="rising">
+          <ByValueCondition>
+            <SimulationTimeCondition value="18.0" rule="greaterThan"/>
+          </ByValueCondition>
+        </Condition>
+      </ConditionGroup>
+    </StopTrigger>
+  </Storyboard>
+</OpenSCENARIO>

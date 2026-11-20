@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO>
+  <FileHeader revMajor="1" revMinor="2" date="2026-11-20T12:00:00" description="MSCA STEP-UP DC8 &amp; DC9: Child Emerging Behind Curbside Parked SUV Sightline Occluder" author="Horizon Europe MSCA STEP-UP Consortium"/>
+  <ParameterDeclarations>
+    <ParameterDeclaration name="EgoApproachSpeedMs" parameterType="double" value="8.33"/>
+    <ParameterDeclaration name="ChildDartSpeedMs" parameterType="double" value="1.65"/>
+    <ParameterDeclaration name="ParkedSuvOffsetM" parameterType="double" value="5.5"/>
+  </ParameterDeclarations>
+  <CatalogLocations/>
+  <RoadNetwork>
+    <LogicFile filepath="Town03"/>
+    <SceneGraphFile filepath=""/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="ego_vehicle">
+      <Vehicle name="vehicle.lincoln.mkz_2020" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="50.0" maxAcceleration="4.0" maxDeceleration="9.0"/>
+        <BoundingBox>
+          <Center x="1.4" y="0.0" z="0.75"/>
+          <Dimensions width="2.0" length="4.9" height="1.5"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.7" trackWidth="1.7" positionX="2.8" positionZ="0.35"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.7" trackWidth="1.7" positionX="0.0" positionZ="0.35"/>
+        </Axles>
+        <Properties>
+          <Property name="type" value="ego_vehicle"/>
+          <Property name="pomdp_phantom_grid" value="enabled"/>
+        </Properties>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="parked_suv_occluder">
+      <Vehicle name="vehicle.chevrolet.impala" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="40.0" maxAcceleration="3.0" maxDeceleration="7.0"/>
+        <BoundingBox>
+          <Center x="0.0" y="0.0" z="0.89"/>
+          <Dimensions width="1.95" length="4.90" height="1.78"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.72" trackWidth="1.68" positionX="2.7" positionZ="0.36"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.72" trackWidth="1.68" positionX="0.0" positionZ="0.36"/>
+        </Axles>
+        <Properties>
+          <Property name="stepup_role" value="curbside_occluder"/>
+        </Properties>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="ped_child_occluded">
+      <Pedestrian model="walker.pedestrian.0012" mass="28.0" name="walker.pedestrian.0012" pedestrianCategory="pedestrian">
+        <ParameterDeclarations/>
+        <BoundingBox>
+          <Center x="0.0" y="0.0" z="0.65"/>
+          <Dimensions width="0.40" length="0.40" height="1.30"/>
+        </BoundingBox>
+        <Properties>
+          <Property name="stepup_archetype" value="child_7_9yr"/>
+          <Property name="eye_height_m" value="1.22"/>
+        </Properties>
+      </Pedestrian>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <Private entityRef="ego_vehicle">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="38.0" y="-1.65" z="0.3" h="3.14159" p="0.0" r="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="$EgoApproachSpeedMs"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="parked_suv_occluder">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="$ParkedSuvOffsetM" y="-4.15" z="0.3" h="3.14159" p="0.0" r="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="ped_child_occluded">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="0.8" y="-5.2" z="0.3" h="1.5708" p="0.0" r="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+      </Actions>
+    </Init>
+    <Story name="ParkedSuvChildOcclusionStory">
+      <Act name="ChildEmergenceAct">
+        <ManeuverGroup maximumExecutionCount="1" name="ChildEmergenceGroup">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="ped_child_occluded"/>
+          </Actors>
+          <Maneuver name="ChildCrossesFromOcclusionShadow">
+            <Event name="ChildStepOutEvent" priority="overwrite">
+              <Action name="ChildCrossAction">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="0.52" dynamicsDimension="time"/>
+                      <SpeedActionTarget>
+                        <AbsoluteTargetSpeed value="$ChildDartSpeedMs"/>
+                      </SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="CavApproachesShadowZone" delay="0.0" conditionEdge="rising">
+                    <ByEntityCondition>
+                      <TriggeringEntities triggeringEntitiesRule="any">
+                        <EntityRef entityRef="ego_vehicle"/>
+                      </TriggeringEntities>
+                      <EntityCondition>
+                        <RelativeDistanceCondition entityRef="ped_child_occluded" relativeDistanceType="euclidianDistance" value="18.0" freespace="false" rule="lessThan"/>
+                      </EntityCondition>
+                    </ByEntityCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="ActStartZero" delay="0.0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0.0" rule="greaterOrEqual"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+      </Act>
+    </Story>
+    <StopTrigger>
+      <ConditionGroup>
+        <Condition name="ScenarioEndTime" delay="0.0" conditionEdge="rising">
+          <ByValueCondition>
+            <SimulationTimeCondition value="16.0" rule="greaterThan"/>
+          </ByValueCondition>
+        </Condition>
+      </ConditionGroup>
+    </StopTrigger>
+  </Storyboard>
+</OpenSCENARIO>
