@@ -20,6 +20,7 @@
 ### :rocket: New Features
 * Scenarios no longer take `world`. `BasicScenario` provides the world, the map and the global route planner.
 * OpenSCENARIO 2.0 support is now optional. Every other mode runs without the antlr4 runtime installed.
+* Added the Scenic scenario `srunner/scenic/cutInFromRight.scenic` on Town10HD_Opt: a vehicle ahead in the right lane cuts in front of the ego, which brakes. With the `CutIn` configs removed, it is the cut-in example for CARLA 1.0, and every sample varies the place, the gap, both speeds and when the vehicle changes lane.
 * `ConstructionObstacle`, `ConstructionObstacleTwoWays` and `ParkingExit` take their traffic from the config, running an actor flow when given `start_actor_flow` and `end_actor_flow`, and slowing the background traffic down when not.
 
 ### :bug: Bug Fixes
