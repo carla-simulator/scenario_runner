@@ -16,15 +16,11 @@ rate-limited neck yaw, and seated wheelchair pelvis postures inside CARLA Scenar
 from __future__ import annotations
 
 from dataclasses import dataclass
+import importlib
 import math
 from typing import Any
 
 import numpy as np
-
-try:
-    import carla
-except ImportError:  # pragma: no cover
-    carla = None  # type: ignore[assignment]
 
 from srunner.scenariomanager.actorcontrols.basic_control import BasicControl
 
@@ -32,9 +28,17 @@ GAZE_ON_PHONE: int = 0
 GAZE_ON_ROAD: int = 1
 
 
+def _get_carla_module() -> Any:
+    """Return the optional `carla` Python module when installed, or `None`."""
+    try:
+        return importlib.import_module("carla")
+    except ImportError:
+        return None
+
+
 @dataclass(frozen=True)
 class BoneTransformEuler:
-    """Euler bone override (degrees) & local translation (meters) for `carla.WalkerBoneControlIn`."""
+    """Euler bone override (degrees) and local translation (meters) for `WalkerBoneControlIn`."""
 
     bone_name: str
     pitch_deg: float = 0.0
@@ -45,6 +49,7 @@ class BoneTransformEuler:
     tz_m: float = 0.0
 
     def to_dict(self) -> dict[str, float | str]:
+        """Serialize the bone Euler rotation and local translation into a dictionary."""
         return {
             "bone_name": self.bone_name,
             "pitch_deg": self.pitch_deg,
@@ -122,17 +127,17 @@ def build_walker_bone_overrides(
         )
     elif archetype == "blind_low_vision":
         cane_sweep_deg = 22.0 * math.sin(2.0 * math.pi * 1.2 * float(sim_time_s))
+        clamped_neck = float(np.clip(active_gaze_yaw_deg, -45.0, 45.0))
         bones.extend(
             [
-                BoneTransformEuler("crl_neck__C", yaw_deg=float(np.clip(active_gaze_yaw_deg, -45.0, 45.0))),
+                BoneTransformEuler("crl_neck__C", yaw_deg=clamped_neck),
                 BoneTransformEuler("crl_foreArm__R", pitch_deg=-25.0),
                 BoneTransformEuler("crl_hand__R", yaw_deg=cane_sweep_deg),
             ]
         )
     else:
-        bones.append(
-            BoneTransformEuler("crl_neck__C", yaw_deg=float(np.clip(active_gaze_yaw_deg, -75.0, 75.0)))
-        )
+        clamped_neck = float(np.clip(active_gaze_yaw_deg, -75.0, 75.0))
+        bones.append(BoneTransformEuler("crl_neck__C", yaw_deg=clamped_neck))
 
     return bones
 
@@ -146,7 +151,7 @@ def to_carla_walker_bone_control(
     if force_dict:
         return {"bone_transforms": [b.to_dict() for b in bones]}
 
-    mod = carla_module if carla_module is not None else carla
+    mod = carla_module if carla_module is not None else _get_carla_module()
     if mod is not None and hasattr(mod, "WalkerBoneControlIn"):
         bone_tuples = [
             (
@@ -172,6 +177,7 @@ class WalkerBonePostureControl(BasicControl):
     """
 
     def __init__(self, actor: Any, args: dict[str, Any] | None = None) -> None:
+        """Initialize the skeletal posture controller for a pedestrian actor."""
         super().__init__(actor)
         cfg = args or {}
         self.archetype: str = str(cfg.get("archetype", "adult_baseline"))
@@ -204,9 +210,9 @@ class WalkerBonePostureControl(BasicControl):
             prev_neck_yaw_deg=self._prev_neck_yaw_deg,
             dt_s=self.dt_s,
         )
-        for b in self.last_bones:
-            if b.bone_name == "crl_neck__C":
-                self._prev_neck_yaw_deg = b.yaw_deg
+        for bone in self.last_bones:
+            if bone.bone_name == "crl_neck__C":
+                self._prev_neck_yaw_deg = bone.yaw_deg
 
         if not self._actor or not getattr(self._actor, "is_alive", True):
             return

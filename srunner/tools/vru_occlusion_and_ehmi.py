@@ -18,6 +18,7 @@ Implements CARLA VRU sightline occlusion and external HMI evaluation tools:
 from __future__ import annotations
 
 from dataclasses import dataclass
+import importlib
 import math
 from typing import Any, Sequence
 
@@ -28,12 +29,20 @@ EHMI_MODE_MAP: dict[str, int] = {
     "CRUISING_NON_YIELDING": 1,
     "VRU_DETECTED_YIELDING": 2,
 }
-EHMI_ID_TO_NAME: dict[int, str] = {v: k for k, v in EHMI_MODE_MAP.items()}
+EHMI_ID_TO_NAME: dict[int, str] = {val: key for key, val in EHMI_MODE_MAP.items()}
+
+
+def _get_carla_module() -> Any:
+    """Return the optional `carla` Python module when installed, or `None`."""
+    try:
+        return importlib.import_module("carla")
+    except ImportError:
+        return None
 
 
 @dataclass(frozen=True)
 class VruAnthropometry:
-    """Anthropometric eye height & shoulder semi-width for 3D skeletal keypoint synthesis."""
+    """Anthropometric eye height and shoulder semi-width for 3D skeletal keypoint synthesis."""
 
     eye_height_m: float
     shoulder_radius_m: float
@@ -66,6 +75,7 @@ class OccluderBox3D:
     category: str = "parked_suv"
 
     def to_aabb(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return `(box_min, box_max)` 3D NumPy coordinate bounds of this occluder."""
         cx, cy = float(self.center_xy[0]), float(self.center_xy[1])
         hl, hw = 0.5 * float(self.length_m), 0.5 * float(self.width_m)
         bmin = np.array([cx - hl, cy - hw, float(self.z_base_m)], dtype=float)
@@ -76,6 +86,7 @@ class OccluderBox3D:
 
     @classmethod
     def parked_suv(cls, box_id: str, center_xy: tuple[float, float]) -> OccluderBox3D:
+        """Construct a standard curbside parked SUV (`4.90 m x 1.95 m x 1.78 m`) occluder."""
         return cls(
             box_id=box_id,
             center_xy=center_xy,
@@ -87,6 +98,7 @@ class OccluderBox3D:
 
     @classmethod
     def transit_bus(cls, box_id: str, center_xy: tuple[float, float]) -> OccluderBox3D:
+        """Construct a curbside transit bus (`12.0 m x 2.55 m x 3.15 m`) occluder."""
         return cls(
             box_id=box_id,
             center_xy=center_xy,
@@ -98,7 +110,7 @@ class OccluderBox3D:
 
 
 def sample_16_skeletal_keypoints_3d(
-    xy: tuple[float, float],
+    pos_xy: tuple[float, float],
     archetype: str = "adult_baseline",
     gaze_state: int = 1,
 ) -> np.ndarray:
@@ -106,7 +118,7 @@ def sample_16_skeletal_keypoints_3d(
     anthro = VRU_ANTHROPOMETRY.get(archetype, VRU_ANTHROPOMETRY["adult_baseline"])
     z_eye = anthro.eye_height_m
     z_top = z_eye + 0.10
-    x0, y0 = float(xy[0]), float(xy[1])
+    x0, y0 = float(pos_xy[0]), float(pos_xy[1])
     w_sh = anthro.shoulder_radius_m * 0.85
     head_drop = 0.05 if gaze_state == 0 else 0.0
 
@@ -132,23 +144,23 @@ def sample_16_skeletal_keypoints_3d(
 
 
 def segment_intersects_aabb_3d(
-    p0: np.ndarray,
-    p1: np.ndarray,
+    ray_origin: np.ndarray,
+    ray_target: np.ndarray,
     box_min: np.ndarray,
     box_max: np.ndarray,
 ) -> bool:
     """Exact 3D Kay-Kajiya slab ray-segment intersection test against an AABB."""
-    d = np.asarray(p1, dtype=float) - np.asarray(p0, dtype=float)
+    delta = np.asarray(ray_target, dtype=float) - np.asarray(ray_origin, dtype=float)
     t_min = 0.0
     t_max = 1.0
     for axis in range(3):
-        if abs(d[axis]) < 1e-9:
-            if p0[axis] < box_min[axis] or p0[axis] > box_max[axis]:
+        if abs(delta[axis]) < 1e-9:
+            if ray_origin[axis] < box_min[axis] or ray_origin[axis] > box_max[axis]:
                 return False
         else:
-            inv_d = 1.0 / d[axis]
-            t1 = (box_min[axis] - p0[axis]) * inv_d
-            t2 = (box_max[axis] - p0[axis]) * inv_d
+            inv_d = 1.0 / delta[axis]
+            t1 = (box_min[axis] - ray_origin[axis]) * inv_d
+            t2 = (box_max[axis] - ray_origin[axis]) * inv_d
             if t1 > t2:
                 t1, t2 = t2, t1
             t_min = max(t_min, t1)
@@ -227,7 +239,7 @@ def evaluate_approach_detection_lead_time(
 ) -> dict[str, float]:
     """
     Sweep an approaching CAV along `y = cav_lane_y` from `x = +42 m` down to `x = 0.5 m`
-    at `approach_speed_kmh` and compute continuous unobstructed sightline horizon & lead time.
+    at `approach_speed_kmh` and compute continuous unobstructed sightline horizon and lead time.
     """
     v_ms = max(0.5, float(approach_speed_kmh) / 3.6)
     xs_outward = np.linspace(0.5, 42.0, 167)
@@ -257,7 +269,7 @@ def evaluate_approach_detection_lead_time(
 
 
 class PhantomVruBeliefGrid:
-    """POMDP occluded phantom VRU occupancy belief grid & CAV speed-cap planner."""
+    """POMDP occluded phantom VRU occupancy belief grid and CAV speed-cap planner."""
 
     def __init__(
         self,
@@ -266,15 +278,18 @@ class PhantomVruBeliefGrid:
         prior_prob: float = 0.08,
         probe_height_m: float = 1.15,
     ) -> None:
+        """Initialize the 2D POMDP occupancy belief grid over `bounds_xy`."""
         self.bounds_xy = bounds_xy
         self.res_m = max(0.5, float(res_m))
         self.prior_prob = float(prior_prob)
         self.probe_height_m = float(probe_height_m)
 
         xmin, ymin, xmax, ymax = bounds_xy
-        self.xs = np.arange(xmin, xmax + 1e-6, self.res_m)
-        self.ys = np.arange(ymin, ymax + 1e-6, self.res_m)
-        self.belief = np.full((len(self.ys), len(self.xs)), self.prior_prob, dtype=float)
+        self.x_coords = np.arange(xmin, xmax + 1e-6, self.res_m)
+        self.y_coords = np.arange(ymin, ymax + 1e-6, self.res_m)
+        self.belief = np.full(
+            (len(self.y_coords), len(self.x_coords)), self.prior_prob, dtype=float
+        )
         self.shadow_mask = np.zeros_like(self.belief, dtype=bool)
 
     def compute_shadow_mask(
@@ -282,6 +297,7 @@ class PhantomVruBeliefGrid:
         cav_sensor_xyz: tuple[float, float, float],
         occluders: Sequence[OccluderBox3D],
     ) -> np.ndarray:
+        """Compute boolean occlusion shadow mask across grid cells from `cav_sensor_xyz`."""
         sensor_pt = np.asarray(cav_sensor_xyz, dtype=float)
         aabbs = [occ.to_aabb() for occ in occluders]
         mask = np.zeros_like(self.belief, dtype=bool)
@@ -289,8 +305,8 @@ class PhantomVruBeliefGrid:
             self.shadow_mask = mask
             return mask
 
-        for iy, y_val in enumerate(self.ys):
-            for ix, x_val in enumerate(self.xs):
+        for iy, y_val in enumerate(self.y_coords):
+            for ix, x_val in enumerate(self.x_coords):
                 target = np.array([float(x_val), float(y_val), self.probe_height_m], dtype=float)
                 for bmin, bmax in aabbs:
                     if segment_intersects_aabb_3d(sensor_pt, target, bmin, bmax):
@@ -308,6 +324,7 @@ class PhantomVruBeliefGrid:
         p_detect_clear: float = 0.94,
         p_false_alarm: float = 0.02,
     ) -> np.ndarray:
+        """Propagate diffusion + shadow birth prior and apply Bayesian visibility update."""
         b_prev = self.belief
         padded = np.pad(b_prev, 1, mode="edge")
         neighbor_avg = 0.25 * (
@@ -321,8 +338,20 @@ class PhantomVruBeliefGrid:
 
         obs_occupied = np.zeros_like(self.belief, dtype=bool)
         for vx, vy in detected_vru_xys:
-            ix = int(np.clip(round((float(vx) - self.xs[0]) / self.res_m), 0, len(self.xs) - 1))
-            iy = int(np.clip(round((float(vy) - self.ys[0]) / self.res_m), 0, len(self.ys) - 1))
+            ix = int(
+                np.clip(
+                    round((float(vx) - self.x_coords[0]) / self.res_m),
+                    0,
+                    len(self.x_coords) - 1,
+                )
+            )
+            iy = int(
+                np.clip(
+                    round((float(vy) - self.y_coords[0]) / self.res_m),
+                    0,
+                    len(self.y_coords) - 1,
+                )
+            )
             obs_occupied[iy, ix] = True
 
         num_pos = p_detect_clear * b_pred
@@ -338,8 +367,21 @@ class PhantomVruBeliefGrid:
         return self.belief
 
     def query_prob(self, x_m: float, y_m: float) -> float:
-        ix = int(np.clip(round((float(x_m) - self.xs[0]) / self.res_m), 0, len(self.xs) - 1))
-        iy = int(np.clip(round((float(y_m) - self.ys[0]) / self.res_m), 0, len(self.ys) - 1))
+        """Return phantom VRU occupancy probability at world coordinate `(x_m, y_m)`."""
+        ix = int(
+            np.clip(
+                round((float(x_m) - self.x_coords[0]) / self.res_m),
+                0,
+                len(self.x_coords) - 1,
+            )
+        )
+        iy = int(
+            np.clip(
+                round((float(y_m) - self.y_coords[0]) / self.res_m),
+                0,
+                len(self.y_coords) - 1,
+            )
+        )
         return float(self.belief[iy, ix])
 
     def max_conflict_zone_risk(
@@ -347,8 +389,9 @@ class PhantomVruBeliefGrid:
         x_range: tuple[float, float] = (-3.5, 8.0),
         y_range: tuple[float, float] = (-6.5, 2.5),
     ) -> float:
-        x_mask = (self.xs >= x_range[0]) & (self.xs <= x_range[1])
-        y_mask = (self.ys >= y_range[0]) & (self.ys <= y_range[1])
+        """Return peak occupancy probability within the crosswalk conflict zone."""
+        x_mask = (self.x_coords >= x_range[0]) & (self.x_coords <= x_range[1])
+        y_mask = (self.y_coords >= y_range[0]) & (self.y_coords <= y_range[1])
         sub = self.belief[np.ix_(y_mask, x_mask)]
         return float(np.max(sub)) if sub.size > 0 else 0.0
 
@@ -359,13 +402,16 @@ class PhantomVruBeliefGrid:
         comfortable_decel_ms2: float = 3.2,
         reaction_buf_s: float = 0.35,
     ) -> float:
+        """Compute risk-modulated defensive approach speed cap (m/s) for the ego CAV."""
         risk = self.max_conflict_zone_risk()
         if risk < 0.20 or cav_x_m <= 0.5:
             return float(nominal_speed_ms)
         dist_to_crosswalk = max(0.5, float(cav_x_m) - 2.0)
-        a = max(0.5, float(comfortable_decel_ms2))
-        tr = float(reaction_buf_s)
-        v_stop_bound = -a * tr + math.sqrt((a * tr) ** 2 + 2.0 * a * dist_to_crosswalk)
+        acc = max(0.5, float(comfortable_decel_ms2))
+        t_react = float(reaction_buf_s)
+        v_stop_bound = -acc * t_react + math.sqrt(
+            (acc * t_react) ** 2 + 2.0 * acc * dist_to_crosswalk
+        )
         blend = min(1.0, (risk - 0.20) / 0.45)
         v_cap = (1.0 - blend) * float(nominal_speed_ms) + blend * v_stop_bound
         return float(max(1.5, min(float(nominal_speed_ms), v_cap)))
@@ -391,6 +437,7 @@ class CarlaEhmiShaderController:
     """Evaluates and synchronizes CIE `1.5 Hz` pulsing cyan eHMI state onto CARLA vehicles."""
 
     def __init__(self, initial_mode: int | str = "OFF") -> None:
+        """Initialize the eHMI controller with `initial_mode`."""
         self.mode: int | str = initial_mode
         self.last_state: EhmiShaderState | None = None
 
@@ -401,23 +448,27 @@ class CarlaEhmiShaderController:
         ambient_eh_lux: float = 500.0,
         vehicle_actor: Any = None,
     ) -> EhmiShaderState:
+        """Evaluate current `EhmiShaderState` and push light state to `vehicle_actor`."""
         if mode is not None:
             self.mode = mode
         state = evaluate_ehmi_shader_state(
             self.mode, sim_time_s=sim_time_s, ambient_eh_lux=ambient_eh_lux
         )
         self.last_state = state
-        if vehicle_actor is not None and hasattr(vehicle_actor, "set_light_state"):
+        carla_mod = _get_carla_module()
+        if (
+            vehicle_actor is not None
+            and carla_mod is not None
+            and hasattr(vehicle_actor, "set_light_state")
+        ):
             try:
-                import carla  # type: ignore[import-not-found]
-
                 if state.mode_id == 2:
-                    vehicle_actor.set_light_state(carla.VehicleLightState.Special1)
+                    vehicle_actor.set_light_state(carla_mod.VehicleLightState.Special1)
                 elif state.mode_id == 1:
-                    vehicle_actor.set_light_state(carla.VehicleLightState.Position)
+                    vehicle_actor.set_light_state(carla_mod.VehicleLightState.Position)
                 else:
-                    vehicle_actor.set_light_state(carla.VehicleLightState.NONE)
-            except Exception:
+                    vehicle_actor.set_light_state(carla_mod.VehicleLightState.NONE)
+            except (AttributeError, RuntimeError, TypeError, ValueError):
                 pass
         return state
 
@@ -428,7 +479,7 @@ def evaluate_ehmi_shader_state(
     ambient_eh_lux: float = 500.0,
     bumper_reflectance_rho: float = 0.18,
 ) -> EhmiShaderState:
-    """Evaluate CIE high-contrast CAV eHMI shader state (`OFF`, `CRUISING_NON_YIELDING`, `VRU_DETECTED_YIELDING`)."""
+    """Evaluate CIE high-contrast CAV eHMI shader state (`OFF`, `CRUISING`, `YIELDING`)."""
     if isinstance(mode, str):
         key = mode.strip().upper()
         if key not in EHMI_MODE_MAP:
